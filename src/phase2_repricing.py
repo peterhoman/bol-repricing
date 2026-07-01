@@ -405,7 +405,16 @@ class RepricingEngine:
         buybox_won = []
         buybox_checks_failed = 0
 
-        for i, ean in enumerate(self.products):
+        # Frozen EANs must be processed even if they've dropped out of today's CSV
+        # (which is actually expected - once an EAN wins the buybox, Peter's daily
+        # "no buybox" export naturally stops including it). Without this union,
+        # those EANs would silently disappear from `adjustments`, and the next
+        # XML generation would revert them to the fresh, undiscounted B-Living
+        # price - undoing the win instead of holding it. (This bug actually
+        # happened to EAN 8716522110005 - fixed by this union + re-freezing it.)
+        all_eans = set(self.products.keys()) | set(frozen.keys())
+
+        for i, ean in enumerate(all_eans):
             if ean not in self.bliving_klantprijzen:
                 continue
 
