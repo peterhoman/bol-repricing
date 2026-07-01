@@ -29,7 +29,12 @@ if __name__ == "__main__":
         print("\n[ERROR] No klantprijzen loaded from B-Living feed")
         sys.exit(1)
 
-    adjustments, new_state, buybox_won = engine.run_single_iteration_stateless()
+    # NOTE: live buybox checking (scraping bol.com's product pages) does not
+    # work from GitHub Actions - bol.com returns 403 Forbidden for requests
+    # from cloud/datacenter IP ranges. It only works from a residential
+    # connection (tested locally). So it's disabled here to avoid wasting
+    # ~2-3 minutes per run on checks that always fail anyway.
+    adjustments, new_state, buybox_won = engine.run_single_iteration_stateless(check_buybox_live=False)
 
     if buybox_won:
         print(f"\n[BUYBOX] Won buybox this run, price held steady: {buybox_won}")
