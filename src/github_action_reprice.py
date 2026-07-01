@@ -29,7 +29,10 @@ if __name__ == "__main__":
         print("\n[ERROR] No klantprijzen loaded from B-Living feed")
         sys.exit(1)
 
-    adjustments, new_state = engine.run_single_iteration_stateless()
+    adjustments, new_state, buybox_won = engine.run_single_iteration_stateless()
+
+    if buybox_won:
+        print(f"\n[BUYBOX] Won buybox this run, price held steady: {buybox_won}")
 
     output_dir = Path(__file__).resolve().parent.parent / "output"
     output_dir.mkdir(exist_ok=True)
