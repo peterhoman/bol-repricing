@@ -1,0 +1,30 @@
+name: Bol.com Repricing
+
+on:
+  schedule:
+    # Runs at :20 past every hour - 20 minutes after Channable's hourly import slot,
+    # giving Bol.com time to process before Channable's NEXT import an hour later.
+    - cron: '20 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  reprice:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests python-dotenv
+
+      - name: Run repricing iteration
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO: peterhoman/bol-repricing
+        run: python src/github_action_reprice.py
