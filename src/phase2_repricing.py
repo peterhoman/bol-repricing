@@ -404,6 +404,8 @@ class RepricingEngine:
                         buybox_won.append(ean)
                 else:
                     buybox_checks_failed += 1
+                    if buybox_checks_failed <= 3:
+                        print(f"   [DEBUG] Buybox check failed for {ean}: {result.get('error')}")
                 time.sleep(0.3)  # be polite to bol.com, avoid hammering their servers
 
             if has_buybox:
