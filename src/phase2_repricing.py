@@ -296,6 +296,24 @@ class RepricingEngine:
             pass
         return {}
 
+    def load_frozen_eans(self) -> dict:
+        """
+        Fetch frozen.json from GitHub: {ean: klantprijs} for EANs that have
+        been confirmed (via a manual/local buybox check, since the automated
+        cloud job can't check live buybox status - bol.com blocks datacenter
+        IPs) to have already won the buybox. These are held at their current
+        klantprijs indefinitely - never reduced further, never bumped back up
+        (bumping up could immediately lose the buybox again).
+        """
+        url = "https://raw.githubusercontent.com/peterhoman/bol-repricing/main/frozen.json"
+        try:
+            r = requests.get(url, timeout=15)
+            if r.status_code == 200:
+                return r.json()
+        except Exception:
+            pass
+        return {}
+
     def check_buybox(self, ean: str, session: requests.Session, seller_name: str = "Tiptopshop") -> dict:
         """
         Check the LIVE buybox status for one EAN by reading Bol.com's own
@@ -375,8 +393,10 @@ class RepricingEngine:
         is_new_day = state.get('date') != today_str
 
         last_published = {} if is_new_day else self.load_last_published_klantprijzen()
+        frozen = self.load_frozen_eans()
 
         print(f"\n[STATELESS] New day reset: {is_new_day} (last state date: {state.get('date')})")
+        print(f"[STATELESS] Frozen (buybox already won) EANs: {len(frozen)}")
 
         session = requests.Session()
 
@@ -387,6 +407,12 @@ class RepricingEngine:
 
         for i, ean in enumerate(self.products):
             if ean not in self.bliving_klantprijzen:
+                continue
+
+            # Frozen: confirmed buybox winner (via manual/local check) - hold steady, skip everything else
+            if ean in frozen:
+                adjustments[ean] = frozen[ean]
+                buybox_won.append(ean)
                 continue
 
             original_klantprijs = self.bliving_klantprijzen[ean]
