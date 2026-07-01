@@ -4,6 +4,8 @@ import os
 import sys
 import io
 import csv
+import re
+import json
 import time
 import base64
 import requests
@@ -224,7 +226,6 @@ class RepricingEngine:
 
     def upload_json_to_github(self, data: dict, github_filename: str) -> bool:
         """Upload a small JSON state file to GitHub (used to remember progress between runs)."""
-        import json
         content_b64 = base64.b64encode(json.dumps(data, indent=2).encode('utf-8')).decode('utf-8')
 
         github_token = os.getenv("GITHUB_TOKEN")
@@ -295,7 +296,58 @@ class RepricingEngine:
             pass
         return {}
 
-    def run_single_iteration_stateless(self) -> tuple:
+    def check_buybox(self, ean: str, session: requests.Session, seller_name: str = "Tiptopshop") -> dict:
+        """
+        Check the LIVE buybox status for one EAN by reading Bol.com's own
+        public product page (no API key needed - just the structured
+        schema.org JSON-LD data that's on every product page for SEO).
+
+        1. Search bol.com for the EAN to find the product page URL.
+        2. Fetch that product page and parse its JSON-LD blocks.
+        3. Find the variant matching this EAN (gtin13) and read its
+           offers.seller.name - that's whoever currently "wins" the buybox.
+
+        Returns: {'found': bool, 'has_buybox': bool, 'price': float, 'seller': str}
+        or {'found': False, 'error': '...'} if anything didn't resolve.
+        """
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+
+        try:
+            search_r = session.get(f"https://www.bol.com/nl/nl/s/?searchtext={ean}", headers=headers, timeout=15)
+            if search_r.status_code != 200:
+                return {"found": False, "error": f"search status {search_r.status_code}"}
+
+            urls = re.findall(r'"(/nl/nl/p/[^"]+)"', search_r.text)
+            if not urls:
+                return {"found": False, "error": "no product url in search results"}
+            product_url = "https://www.bol.com" + urls[0]
+
+            product_r = session.get(product_url, headers=headers, timeout=15)
+            if product_r.status_code != 200:
+                return {"found": False, "error": f"product page status {product_r.status_code}"}
+
+            blocks = re.findall(r'<script type="application/ld\+json">(.*?)</script>', product_r.text, re.DOTALL)
+            for block in blocks:
+                try:
+                    data = json.loads(block)
+                except Exception:
+                    continue
+                candidates = data.get("hasVariant", [data]) if isinstance(data, dict) else []
+                for c in candidates:
+                    if c.get("gtin13") == ean:
+                        offers = c.get("offers", {})
+                        seller = offers.get("seller", {}).get("name", "")
+                        return {
+                            "found": True,
+                            "price": offers.get("price"),
+                            "seller": seller,
+                            "has_buybox": seller.lower() == seller_name.lower(),
+                        }
+            return {"found": False, "error": "ean not found in JSON-LD"}
+        except Exception as e:
+            return {"found": False, "error": str(e)}
+
+    def run_single_iteration_stateless(self, check_buybox_live: bool = True) -> tuple:
         """
         Stateless version of run_iteration, meant to be triggered by an external
         scheduler (e.g. GitHub Actions cron) where no Python process stays running
@@ -307,7 +359,14 @@ class RepricingEngine:
         (tracked via state.json), it resets to the fresh B-Living klantprijs
         instead of continuing yesterday's reduced prices.
 
-        Returns: (adjustments dict EAN->new_klantprijs, new_state dict)
+        If check_buybox_live is True, each EAN's actual buybox status is checked
+        against Bol.com's public product page before deciding what to do:
+          - Has buybox already -> HOLD the current price (don't reduce further,
+            and don't bump back up either - jumping back to the normal price
+            could immediately lose the buybox again to whoever is still low).
+          - Does not have buybox -> reduce by another €0.50 as before.
+
+        Returns: (adjustments dict EAN->new_klantprijs, new_state dict, buybox_won list)
         """
         from datetime import date
         today_str = date.today().isoformat()
@@ -319,10 +378,14 @@ class RepricingEngine:
 
         print(f"\n[STATELESS] New day reset: {is_new_day} (last state date: {state.get('date')})")
 
+        session = requests.Session()
+
         adjustments = {}
         at_minimum = 0
+        buybox_won = []
+        buybox_checks_failed = 0
 
-        for ean in self.products:
+        for i, ean in enumerate(self.products):
             if ean not in self.bliving_klantprijzen:
                 continue
 
@@ -331,8 +394,25 @@ class RepricingEngine:
 
             # Baseline: continue from last published klantprijs, or reset fresh on a new day
             baseline_klantprijs = last_published.get(ean, original_klantprijs)
-            current_selling_price = self.calculate_normal_price(baseline_klantprijs)
 
+            has_buybox = False
+            if check_buybox_live:
+                result = self.check_buybox(ean, session)
+                if result.get("found"):
+                    has_buybox = result.get("has_buybox", False)
+                    if has_buybox:
+                        buybox_won.append(ean)
+                else:
+                    buybox_checks_failed += 1
+                time.sleep(0.3)  # be polite to bol.com, avoid hammering their servers
+
+            if has_buybox:
+                # Already winning - hold the price steady, don't reduce further
+                # (and don't jump back up, that could lose the buybox again)
+                adjustments[ean] = baseline_klantprijs
+                continue
+
+            current_selling_price = self.calculate_normal_price(baseline_klantprijs)
             new_selling_price = current_selling_price - 0.50
             if new_selling_price < minimum_price:
                 new_selling_price = minimum_price
@@ -342,9 +422,12 @@ class RepricingEngine:
 
         print(f"Adjustments: {len(adjustments)} articles")
         print(f"At minimum price: {at_minimum} articles")
+        if check_buybox_live:
+            print(f"Buybox already won (held steady): {len(buybox_won)} articles")
+            print(f"Buybox check failed (treated as not-won): {buybox_checks_failed} articles")
 
         new_state = {"date": today_str}
-        return adjustments, new_state
+        return adjustments, new_state, buybox_won
 
     def run_iteration(self, iteration: int) -> dict:
         """
