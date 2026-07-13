@@ -51,8 +51,14 @@ if __name__ == "__main__":
         print("\n[ERROR] Failed to upload XML to GitHub")
         sys.exit(1)
 
+    # state.json is a nice-to-have (just remembers which day we're on) - the
+    # important work (the actual price update) is already done and uploaded
+    # above. Retry once, but don't fail the whole run over it: a transient
+    # GitHub API hiccup here shouldn't be reported as a repricing failure.
     if not engine.upload_json_to_github(new_state, "state.json"):
-        print("\n[ERROR] Failed to upload state.json to GitHub")
-        sys.exit(1)
+        print("\n[WARN] state.json upload failed, retrying once...")
+        if not engine.upload_json_to_github(new_state, "state.json"):
+            print("[WARN] state.json upload failed again - continuing anyway, "
+                  "the price update itself already succeeded")
 
     print("\n[DONE] Single repricing iteration complete")
