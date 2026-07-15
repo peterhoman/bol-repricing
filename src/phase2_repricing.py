@@ -395,6 +395,18 @@ class RepricingEngine:
         last_published = {} if is_new_day else self.load_last_published_klantprijzen()
         frozen = self.load_frozen_eans()
 
+        # Auto-unfreeze: if a frozen EAN reappears in today's "no buybox" CSV,
+        # that's bol.com's OWN data telling us we lost the buybox again - no
+        # live scraping needed to know this. Resume reducing it from its
+        # frozen (held) price rather than jumping back to the full price.
+        lost_via_csv = set(frozen.keys()) & set(self.products.keys())
+        for ean in lost_via_csv:
+            last_published[ean] = frozen.pop(ean)
+        if lost_via_csv:
+            print(f"[STATELESS] Auto-unfroze {len(lost_via_csv)} EAN(s) that reappeared "
+                  f"in today's CSV (lost buybox again): {sorted(lost_via_csv)}")
+            self.upload_json_to_github(frozen, "frozen.json")
+
         print(f"\n[STATELESS] New day reset: {is_new_day} (last state date: {state.get('date')})")
         print(f"[STATELESS] Frozen (buybox already won) EANs: {len(frozen)}")
 
