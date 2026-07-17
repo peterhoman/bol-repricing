@@ -27,6 +27,7 @@ class RepricingEngine:
         self.products = {}
         self.price_history = {}
         self.bliving_klantprijzen = {}
+        self.bliving_titels = {}
         self.load_products()
         self.load_bliving_feed()
 
@@ -72,7 +73,7 @@ class RepricingEngine:
             return False
 
     def load_bliving_feed(self):
-        """Download B-Living XML feed and extract klantprijzen."""
+        """Download B-Living XML feed and extract klantprijzen + titles."""
         print(f"\n[FEED] Downloading B-Living feed...")
 
         feed_url = "https://www.b-living.eu/feeds/product-feed-15003253-bbed70ea1f95308232732fe3b662e36f2fab51359cce3fc9ff7e33cac2ef9b07.xml"
@@ -92,6 +93,7 @@ class RepricingEngine:
                     klantprijs = float(klantprijs_text)
 
                     self.bliving_klantprijzen[ean] = klantprijs
+                    self.bliving_titels[ean] = (product.findtext('titel', '') or '').strip()
                 except:
                     pass
 
@@ -100,6 +102,18 @@ class RepricingEngine:
         except Exception as e:
             print(f"   Error: {e}")
             return False
+
+    def is_excluded_from_big_steps(self, ean: str) -> bool:
+        """
+        2Lif and Sun Arts vliegengordijnen never get the aggressive big-step
+        reduction, even when the price gap to a competitor is large. Peter's
+        purchase cost on these specific items is too high to ever compete on
+        price against the dropshipping competitor that targets them - jumping
+        toward the price floor in big steps would just burn margin for
+        nothing, since the buybox was never winnable there in the first place.
+        """
+        titel = self.bliving_titels.get(ean, '')
+        return 'vliegengordijn' in titel.lower()
 
     def calculate_normal_price(self, klantprijs: float) -> float:
         """Calculate normal price using Channable formula for this account."""
@@ -285,6 +299,29 @@ class RepricingEngine:
             print(f"   [WARN] Could not load last published klantprijzen: {e}")
         return result
 
+    def load_big_gap(self) -> dict:
+        """
+        Fetch big_gap.json from GitHub: {ean: remaining_big_steps}.
+
+        EANs in here are far more expensive than the current buybox winner
+        (>= EUR10 detected during a periodic local check). While present in
+        this file, they are exempt from the daily reset - they keep
+        continuing from their last published price, day after day, instead
+        of snapping back to the fresh normal price every morning (which
+        would erase all progress before ever reaching the competitor).
+        remaining_big_steps > 0 -> take EUR10 steps; == 0 -> fine EUR0.50
+        steps, but still exempt from the daily reset until a local check
+        removes the EAN (because it won the buybox, or the gap has closed).
+        """
+        url = "https://raw.githubusercontent.com/peterhoman/bol-repricing/main/big_gap.json"
+        try:
+            r = requests.get(url, timeout=15)
+            if r.status_code == 200:
+                return r.json()
+        except Exception:
+            pass
+        return {}
+
     def load_state(self) -> dict:
         """Fetch state.json from GitHub (tracks the date of the last repricing run)."""
         url = "https://raw.githubusercontent.com/peterhoman/bol-repricing/main/state.json"
@@ -392,8 +429,12 @@ class RepricingEngine:
         state = self.load_state()
         is_new_day = state.get('date') != today_str
 
-        last_published = {} if is_new_day else self.load_last_published_klantprijzen()
+        # Always load last_published (not just when continuing within the
+        # same day) - big-gap EANs need their last position regardless of
+        # day, since they're exempt from the daily reset (see big_gap below).
+        last_published = self.load_last_published_klantprijzen()
         frozen = self.load_frozen_eans()
+        big_gap = self.load_big_gap()
 
         # Auto-unfreeze: if a frozen EAN reappears in today's "no buybox" CSV,
         # that's bol.com's OWN data telling us we lost the buybox again - no
@@ -409,6 +450,7 @@ class RepricingEngine:
 
         print(f"\n[STATELESS] New day reset: {is_new_day} (last state date: {state.get('date')})")
         print(f"[STATELESS] Frozen (buybox already won) EANs: {len(frozen)}")
+        print(f"[STATELESS] Big-gap (>=EUR10 behind, exempt from daily reset) EANs: {len(big_gap)}")
 
         session = requests.Session()
 
@@ -417,14 +459,17 @@ class RepricingEngine:
         buybox_won = []
         buybox_checks_failed = 0
 
-        # Frozen EANs must be processed even if they've dropped out of today's CSV
-        # (which is actually expected - once an EAN wins the buybox, Peter's daily
-        # "no buybox" export naturally stops including it). Without this union,
-        # those EANs would silently disappear from `adjustments`, and the next
-        # XML generation would revert them to the fresh, undiscounted B-Living
-        # price - undoing the win instead of holding it. (This bug actually
-        # happened to EAN 8716522110005 - fixed by this union + re-freezing it.)
-        all_eans = set(self.products.keys()) | set(frozen.keys())
+        # Frozen and big-gap EANs must be processed even if they've dropped out
+        # of today's CSV (expected - once an EAN wins the buybox, or is deep
+        # into a big-gap recovery, Peter's daily "no buybox" export doesn't
+        # necessarily still include it). Without this union, those EANs would
+        # silently disappear from `adjustments`, and the next XML generation
+        # would revert them to the fresh, undiscounted B-Living price - undoing
+        # all progress. (This bug actually happened to EAN 8716522110005 -
+        # fixed by this union + re-freezing it.)
+        all_eans = set(self.products.keys()) | set(frozen.keys()) | set(big_gap.keys())
+
+        big_gap_steps_taken = 0
 
         for i, ean in enumerate(all_eans):
             if ean not in self.bliving_klantprijzen:
@@ -439,8 +484,20 @@ class RepricingEngine:
             original_klantprijs = self.bliving_klantprijzen[ean]
             minimum_price = self.calculate_minimum_price(original_klantprijs)
 
-            # Baseline: continue from last published klantprijs, or reset fresh on a new day
-            baseline_klantprijs = last_published.get(ean, original_klantprijs)
+            in_big_gap = ean in big_gap
+            if in_big_gap:
+                # Exempt from the daily reset - always continue from wherever
+                # it was last, big-step or fine-step, day after day, until a
+                # local check wins it (-> frozen) or removes it (gap closed).
+                baseline_klantprijs = last_published.get(ean, original_klantprijs)
+                step = 10.0 if big_gap[ean] > 0 else 0.50
+                if big_gap[ean] > 0:
+                    big_gap[ean] -= 1
+                    big_gap_steps_taken += 1
+            else:
+                # Normal EAN: continue within the day, or reset fresh on a new day
+                baseline_klantprijs = original_klantprijs if is_new_day else last_published.get(ean, original_klantprijs)
+                step = 0.50
 
             has_buybox = False
             if check_buybox_live:
@@ -462,12 +519,16 @@ class RepricingEngine:
                 continue
 
             current_selling_price = self.calculate_normal_price(baseline_klantprijs)
-            new_selling_price = current_selling_price - 0.50
+            new_selling_price = current_selling_price - step
             if new_selling_price < minimum_price:
                 new_selling_price = minimum_price
                 at_minimum += 1
 
             adjustments[ean] = self.calculate_klantprijs_for_target_price(new_selling_price)
+
+        if big_gap_steps_taken:
+            print(f"Big-gap EUR10 steps taken this run: {big_gap_steps_taken}")
+        self.upload_json_to_github(big_gap, "big_gap.json")
 
         print(f"Adjustments: {len(adjustments)} articles")
         print(f"At minimum price: {at_minimum} articles")
