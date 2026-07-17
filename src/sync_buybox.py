@@ -5,7 +5,11 @@ Two-way buybox sync - run this periodically (from a residential connection,
 e.g. Peter's own machine - bol.com blocks buybox checks from cloud IPs).
 
 1. Checks every ACTIVE (not-yet-frozen) tracked EAN: did it just win the
-   buybox? If so, freeze it at its current price.
+   buybox? If so, freeze it at its current price. If not, and the gap to
+   whoever IS winning is >= EUR10, mark it for accelerated EUR10-per-step
+   reduction (see big_gap.json) - unless it's a 2Lif/Sun Arts vliegengordijn,
+   which can never win on price alone (Peter's purchase cost is too high)
+   and would just get burned down to the price floor for nothing.
 2. Checks every FROZEN EAN: does it still have the buybox? If a competitor
    undercut it since it was frozen, UNFREEZE it so the tool resumes
    reducing its price again from where it's currently held.
@@ -84,23 +88,53 @@ def main():
     engine = RepricingEngine(CSV_URL)
     frozen = json.loads(requests.get(
         f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/frozen.json", timeout=15).text or "{}")
+    big_gap = json.loads(requests.get(
+        f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/big_gap.json", timeout=15).text or "{}")
+    last_published = engine.load_last_published_klantprijzen()
 
     session = requests.Session()
 
-    print(f"\n[1/2] Checking {len(engine.products)} active (not yet frozen) articles for NEW wins...")
+    print(f"\n[1/2] Checking {len(engine.products)} active (not yet frozen) articles for NEW wins "
+          f"(and big price gaps)...")
     new_wins = {}
+    big_gap_added = {}
+    big_gap_cleared = []
     for i, ean in enumerate(engine.products):
         if ean in frozen:
             continue
         result = engine.check_buybox(ean, session)
-        if result.get("found") and result.get("has_buybox"):
-            price = float(result.get("price"))
-            new_wins[ean] = round((price - 8) / 2.4, 2)
+        if result.get("found"):
+            if result.get("has_buybox"):
+                price = float(result.get("price"))
+                new_wins[ean] = round((price - 8) / 2.4, 2)
+            else:
+                competitor_price = float(result.get("price"))
+                our_klantprijs = last_published.get(ean, engine.bliving_klantprijzen.get(ean, 0))
+                our_price = engine.calculate_normal_price(our_klantprijs)
+                gap = round(our_price - competitor_price, 2)
+
+                if gap >= 10 and not engine.is_excluded_from_big_steps(ean):
+                    big_gap_added[ean] = int(gap // 10)
+                elif ean in big_gap:
+                    # Gap has closed (or item no longer qualifies) - remove
+                    # the exemption so it rejoins normal daily-reset behavior
+                    big_gap_cleared.append(ean)
         time.sleep(0.3)
         if (i + 1) % 50 == 0:
             print(f"   {i+1}/{len(engine.products)} checked...")
 
     print(f"   -> {len(new_wins)} new winner(s) found")
+    print(f"   -> {len(big_gap_added)} article(s) newly flagged for EUR10 steps "
+          f"(>=EUR10 behind): {sorted(big_gap_added.keys())}")
+    if big_gap_cleared:
+        print(f"   -> {len(big_gap_cleared)} article(s) cleared from big-gap tracking "
+              f"(gap closed): {sorted(big_gap_cleared)}")
+
+    big_gap.update(big_gap_added)
+    for ean in big_gap_cleared:
+        big_gap.pop(ean, None)
+    upload_json(big_gap, "big_gap.json",
+                f"Sync: +{len(big_gap_added)} new big-gap EANs, -{len(big_gap_cleared)} cleared")
 
     print(f"\n[2/2] Re-checking {len(frozen)} frozen articles - did any LOSE the buybox?")
     lost_buybox = []
@@ -122,17 +156,27 @@ def main():
     upload_json(frozen, "frozen.json",
                 f"Sync: +{len(new_wins)} new winners, -{len(lost_buybox)} lost buybox")
 
+    # A newly-won EAN no longer needs big-gap tracking - it's frozen now
+    won_and_was_big_gap = [e for e in new_wins if e in big_gap]
+    if won_and_was_big_gap:
+        for ean in won_and_was_big_gap:
+            del big_gap[ean]
+        upload_json(big_gap, "big_gap.json",
+                    f"Remove {len(won_and_was_big_gap)} EAN(s) from big-gap tracking - they won the buybox")
+
     # Any lost-buybox EAN that isn't in today's CSV needs to be re-added so it resumes reducing
     not_in_csv = [e for e in lost_buybox if e not in engine.products]
     if not_in_csv:
         add_eans_to_csv(not_in_csv)
         print(f"   Re-added {len(not_in_csv)} EAN(s) to CSV (they'd dropped out while frozen)")
 
-    if new_wins or lost_buybox:
+    if new_wins or lost_buybox or big_gap_added or big_gap_cleared:
         trigger_workflow()
 
     print(f"\n[DONE] Frozen total now: {len(frozen)} "
           f"(+{len(new_wins)} new, -{len(lost_buybox)} unfrozen)")
+    print(f"[DONE] Big-gap total now: {len(big_gap)} "
+          f"(+{len(big_gap_added)} new, -{len(big_gap_cleared) + len(won_and_was_big_gap)} cleared)")
 
 
 if __name__ == "__main__":
