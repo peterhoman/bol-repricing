@@ -333,6 +333,41 @@ class RepricingEngine:
             pass
         return {}
 
+    def load_master_tracked(self) -> list:
+        """
+        Fetch master_tracked.json from GitHub: every EAN that has EVER
+        appeared in a daily "no buybox" CSV, ever-growing, never shrinking
+        on its own.
+
+        Why this exists: Peter's daily CSV export is Bol.com's own
+        buybox-status snapshot at ONE moment. Buybox can flip back and
+        forth during the day (seen live: a EUR0.95 gap flipping status
+        multiple times across consecutive days). Previously, an EAN that
+        was actively being reduced yesterday but simply happened to be
+        absent from TODAY's fresh CSV (because it looked "won" at that one
+        export moment) would silently fall out of `adjustments` entirely -
+        no longer frozen (never confirmed as a real win), no longer in
+        today's CSV, no longer in big_gap - and revert straight back to the
+        full undiscounted price with zero tracking, undoing all progress.
+        (Found and confirmed live for EAN 8716522107326 on 19 July - it was
+        in the CSV on 18 July, absent on 19 July despite still lacking the
+        buybox with only a EUR0.95 gap.)
+
+        Fix: once an EAN is EVER seen in any day's CSV, it stays in this
+        master list and keeps being actively reduced regardless of whether
+        later daily CSVs include it - UNTIL a local buybox check actually
+        CONFIRMS a win (moves it to frozen.json, which is the only proper
+        way an EAN should leave active tracking).
+        """
+        url = "https://raw.githubusercontent.com/peterhoman/bol-repricing/main/master_tracked.json"
+        try:
+            r = requests.get(url, timeout=15)
+            if r.status_code == 200:
+                return r.json()
+        except Exception:
+            pass
+        return []
+
     def load_frozen_eans(self) -> dict:
         """
         Fetch frozen.json from GitHub: {ean: klantprijs} for EANs that have
@@ -435,6 +470,7 @@ class RepricingEngine:
         last_published = self.load_last_published_klantprijzen()
         frozen = self.load_frozen_eans()
         big_gap = self.load_big_gap()
+        master_tracked = set(self.load_master_tracked())
 
         # Auto-unfreeze: if a frozen EAN reappears in today's "no buybox" CSV,
         # that's bol.com's OWN data telling us we lost the buybox again - no
@@ -448,9 +484,20 @@ class RepricingEngine:
                   f"in today's CSV (lost buybox again): {sorted(lost_via_csv)}")
             self.upload_json_to_github(frozen, "frozen.json")
 
+        # Grow master_tracked with today's CSV + anything just auto-unfrozen.
+        # This list only ever grows (until an EAN is CONFIRMED won via
+        # frozen.json) - an EAN dropping out of a single day's CSV is not
+        # reliable proof of a win (bol.com's own buybox status can flip
+        # within a day), so we never let that alone erase active tracking.
+        new_master_tracked = master_tracked | set(self.products.keys()) | lost_via_csv
+        if new_master_tracked != master_tracked:
+            self.upload_json_to_github(sorted(new_master_tracked), "master_tracked.json")
+        master_tracked = new_master_tracked
+
         print(f"\n[STATELESS] New day reset: {is_new_day} (last state date: {state.get('date')})")
         print(f"[STATELESS] Frozen (buybox already won) EANs: {len(frozen)}")
         print(f"[STATELESS] Big-gap (>=EUR10 behind, exempt from daily reset) EANs: {len(big_gap)}")
+        print(f"[STATELESS] Master-tracked (ever seen in a CSV) EANs: {len(master_tracked)}")
 
         session = requests.Session()
 
@@ -459,15 +506,19 @@ class RepricingEngine:
         buybox_won = []
         buybox_checks_failed = 0
 
-        # Frozen and big-gap EANs must be processed even if they've dropped out
-        # of today's CSV (expected - once an EAN wins the buybox, or is deep
-        # into a big-gap recovery, Peter's daily "no buybox" export doesn't
-        # necessarily still include it). Without this union, those EANs would
-        # silently disappear from `adjustments`, and the next XML generation
-        # would revert them to the fresh, undiscounted B-Living price - undoing
-        # all progress. (This bug actually happened to EAN 8716522110005 -
-        # fixed by this union + re-freezing it.)
-        all_eans = set(self.products.keys()) | set(frozen.keys()) | set(big_gap.keys())
+        # Frozen, big-gap, AND master-tracked EANs must all be processed even
+        # if they've dropped out of today's CSV (expected - once an EAN wins
+        # the buybox, or is deep into a big-gap recovery, or bol.com's own
+        # snapshot just happened to miss it that one day, Peter's daily
+        # "no buybox" export doesn't necessarily still include it). Without
+        # this union, those EANs would silently disappear from `adjustments`,
+        # and the next XML generation would revert them to the fresh,
+        # undiscounted B-Living price - undoing all progress. (This bug
+        # actually happened twice: to EAN 8716522110005 on 1 July - fixed by
+        # adding frozen to the union - and to EAN 8716522107326 on 19 July,
+        # which was never frozen at all, just a plain active EAN that
+        # vanished from one day's CSV - fixed by adding master_tracked.)
+        all_eans = master_tracked | set(self.products.keys()) | set(frozen.keys()) | set(big_gap.keys())
 
         big_gap_steps_taken = 0
 
