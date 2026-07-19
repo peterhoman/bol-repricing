@@ -658,6 +658,109 @@ class RepricingEngine:
         new_state = {"date": today_str}
         return adjustments, new_state, buybox_won
 
+    def match_competitor_prices(self, undercut: float = 0.02) -> dict:
+        """
+        Morning fast-start (Peter's proposal, 19 July): instead of grinding
+        down from the full price by EUR0.50/EUR10 steps over many hours,
+        immediately match (just barely undercut) whoever currently holds the
+        buybox for every active EAN, the moment a fresh CSV is uploaded.
+        Peter's estimate: this alone should win the buybox on ~80% of
+        articles immediately, since price was often the only disadvantage.
+
+        Must run from a residential connection (same limitation as all
+        buybox-checking) - not usable from the GitHub Actions cloud job.
+        Meant to be run once each morning, right after Peter uploads a fresh
+        CSV, before/instead of the regular hourly cloud iteration for that
+        first cycle. The regular hourly automation then continues normally
+        from wherever this leaves things (EUR0.50 fine-tuning for anything
+        that still doesn't win even at the matched price, capped by the
+        same minimum-price floor as always - never goes below it).
+
+        Also covers EANs already in big_gap.json - matching directly can
+        resolve a large gap in one shot instead of needing several EUR10
+        steps, so those are checked here too and removed from big_gap.json
+        if resolved.
+
+        Returns a dict with counts: {'matched': int, 'already_won': int,
+        'at_minimum': int, 'failed': int}.
+        """
+        frozen = self.load_frozen_eans()
+        big_gap = self.load_big_gap()
+        master_tracked = set(self.load_master_tracked())
+
+        candidates = (set(self.products.keys()) | big_gap.keys() | master_tracked) - set(frozen.keys())
+        candidates = {ean for ean in candidates if ean in self.bliving_klantprijzen}
+
+        session = requests.Session()
+        adjustments = {}
+        newly_won = {}
+        at_minimum = 0
+        failed = 0
+
+        print(f"\n[MATCH] Checking {len(candidates)} active EAN(s) for immediate price-matching...")
+
+        for i, ean in enumerate(candidates):
+            result = self.check_buybox(ean, session)
+            if not result.get("found"):
+                failed += 1
+                time.sleep(0.3)
+                continue
+
+            if result.get("has_buybox"):
+                # Already winning right now - freeze it instead of matching
+                price = float(result.get("price"))
+                newly_won[ean] = round((price - 8) / 2.4, 2)
+                big_gap.pop(ean, None)
+                time.sleep(0.3)
+                continue
+
+            competitor_price = float(result.get("price"))
+            fresh_kp = self.bliving_klantprijzen[ean]
+            minimum_price = self.calculate_minimum_price(fresh_kp)
+
+            target_price = competitor_price - undercut
+            if target_price < minimum_price:
+                target_price = minimum_price
+                at_minimum += 1
+
+            adjustments[ean] = self.calculate_klantprijs_for_target_price(target_price)
+            big_gap.pop(ean, None)  # resolved directly, no need for step-based tracking anymore
+            time.sleep(0.3)
+
+            if (i + 1) % 50 == 0:
+                print(f"   {i+1}/{len(candidates)} checked...")
+
+        # Frozen EANs still need to be included so the XML holds their price too
+        for ean, kp in frozen.items():
+            adjustments[ean] = kp
+
+        output_dir = Path(__file__).resolve().parent.parent / "output"
+        output_dir.mkdir(exist_ok=True)
+        xml_path = str(output_dir / "repricing_current.xml")
+        self.generate_reprice_xml(xml_path, adjustments)
+        self.upload_to_github(xml_path, "repricing_current.xml")
+
+        if newly_won:
+            frozen.update(newly_won)
+            self.upload_json_to_github(frozen, "frozen.json")
+
+        self.upload_json_to_github(big_gap, "big_gap.json")
+
+        from datetime import date
+        self.upload_json_to_github({"date": date.today().isoformat()}, "state.json")
+
+        print(f"\n[MATCH] Matched (undercut competitor): {len(adjustments) - len(frozen)}")
+        print(f"[MATCH] Already winning (frozen now): {len(newly_won)}")
+        print(f"[MATCH] Hit minimum price floor: {at_minimum}")
+        print(f"[MATCH] Check failed: {failed}")
+
+        return {
+            "matched": len(adjustments) - len(frozen),
+            "already_won": len(newly_won),
+            "at_minimum": at_minimum,
+            "failed": failed,
+        }
+
     def run_iteration(self, iteration: int) -> dict:
         """
         Run one iteration of repricing.
