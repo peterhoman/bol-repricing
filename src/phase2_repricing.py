@@ -368,6 +368,72 @@ class RepricingEngine:
             pass
         return []
 
+    def audit_tracking_consistency(self, adjustments: dict, frozen: dict, big_gap: dict,
+                                    master_tracked: set) -> list:
+        """
+        Automatic daily/every-run consistency audit (Peter's request, 19 July,
+        after having to manually discover a silent-tracking-loss bug himself -
+        this exists so that class of bug gets caught by the tool itself from
+        now on, not by him noticing a stuck price).
+
+        Takes the values already computed this run (rather than re-fetching
+        frozen/big_gap/master_tracked/adjustments fresh from GitHub) - partly
+        for efficiency, but mainly because raw.githubusercontent.com has a
+        few minutes of CDN lag after an upload, which caused confusing
+        false-stale-reads during testing earlier this project. Using the
+        in-memory values this run already computed avoids that entirely.
+
+        Checks:
+          1. No EAN should be in BOTH frozen.json and big_gap.json at once
+             (they're meant to be mutually exclusive states).
+          2. No EAN should currently have a REDUCED (non-full) klantprijs
+             while being absent from every tracking list
+             (master_tracked/frozen/big_gap) - that exact pattern is what a
+             silent tracking-loss bug looks like (the bug that hit EAN
+             8716522107326 on 19 July).
+
+        Returns a list of human-readable issue strings (empty if all clear).
+        Also uploads the report to audit_report.json on GitHub so Peter or a
+        future session can see the history of what was found each run.
+        """
+        issues = []
+
+        overlap = set(frozen.keys()) & set(big_gap.keys())
+        if overlap:
+            issues.append(f"CONFLICT: {len(overlap)} EAN(s) in BOTH frozen.json and "
+                           f"big_gap.json: {sorted(overlap)}")
+
+        all_tracked = master_tracked | set(frozen.keys()) | set(big_gap.keys())
+        untracked_reductions = []
+        for ean, kp in adjustments.items():
+            if ean not in self.bliving_klantprijzen:
+                continue
+            fresh_kp = self.bliving_klantprijzen[ean]
+            if kp < fresh_kp - 0.01 and ean not in all_tracked:
+                untracked_reductions.append(ean)
+        if untracked_reductions:
+            issues.append(f"UNTRACKED REDUCTION: {len(untracked_reductions)} EAN(s) have a "
+                           f"reduced price but aren't in master_tracked/frozen/big_gap - "
+                           f"this is the exact silent-tracking-loss pattern found on 19 July: "
+                           f"{sorted(untracked_reductions)}")
+
+        from datetime import datetime as _dt
+        report = {
+            "checked_at": _dt.now().isoformat(),
+            "issues_found": len(issues),
+            "issues": issues,
+        }
+        self.upload_json_to_github(report, "audit_report.json")
+
+        if issues:
+            print(f"\n[AUDIT] {len(issues)} issue(s) found:")
+            for issue in issues:
+                print(f"   - {issue}")
+        else:
+            print(f"\n[AUDIT] No consistency issues found")
+
+        return issues
+
     def load_frozen_eans(self) -> dict:
         """
         Fetch frozen.json from GitHub: {ean: klantprijs} for EANs that have
@@ -586,6 +652,8 @@ class RepricingEngine:
         if check_buybox_live:
             print(f"Buybox already won (held steady): {len(buybox_won)} articles")
             print(f"Buybox check failed (treated as not-won): {buybox_checks_failed} articles")
+
+        self.audit_tracking_consistency(adjustments, frozen, big_gap, master_tracked)
 
         new_state = {"date": today_str}
         return adjustments, new_state, buybox_won
