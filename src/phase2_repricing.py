@@ -63,17 +63,27 @@ class RepricingEngine:
                 print(f"   Error: {response.status_code}")
                 return False
 
-            # Parse CSV from response
+            # Parse CSV from response - auto-detect the delimiter (Peter
+            # sometimes uploads a manual backup CSV built from a spreadsheet
+            # export, which typically uses commas, unlike Bol.com's own
+            # semicolon-delimited export) so both work without him having to
+            # get the exact format right.
+            sample = response.text[:2000]
+            try:
+                delimiter = csv.Sniffer().sniff(sample, delimiters=';,').delimiter
+            except csv.Error:
+                delimiter = ';'
+
             lines = response.text.split('\n')
-            reader = csv.DictReader(lines, delimiter=';')
+            reader = csv.DictReader(lines, delimiter=delimiter)
 
             for row in reader:
                 try:
-                    ean = row.get('EAN', '').strip()
+                    ean = (row.get('EAN') or row.get('ean') or '').strip()
                     if not ean:
                         continue
 
-                    product_name = row.get('Productnaam', '')[:50]
+                    product_name = (row.get('Productnaam') or row.get('productnaam') or '')[:50]
 
                     self.products[ean] = {
                         'ean': ean,
