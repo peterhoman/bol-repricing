@@ -156,8 +156,18 @@ class RepricingEngine:
             return round((klantprijs * 2.4) + 8, 2)
 
     def calculate_minimum_price(self, klantprijs: float) -> float:
-        """Calculate minimum price (klantprijs × 1.9 + 8)."""
-        return round((klantprijs * 1.9) + 8, 2)
+        """
+        Calculate minimum price using the same Channable formula branch as
+        calculate_normal_price: klantprijs < 4 gets +2 added first, before
+        the multiply+add. Previously this was a flat klantprijs × 1.9 + 8
+        with no <4 branch, which didn't match Channable's actual bodemprijs
+        rule for cheap articles (Peter caught this 23 July via a real sold
+        article's klantprijs).
+        """
+        if klantprijs < 4:
+            return round(((klantprijs + 2) * 1.9) + 8, 2)
+        else:
+            return round((klantprijs * 1.9) + 8, 2)
 
     def calculate_klantprijs_for_target_price(self, target_price: float) -> float:
         """
