@@ -363,6 +363,48 @@ class RepricingEngine:
             pass
         return {}
 
+    def load_no_competitor(self) -> set:
+        """
+        Fetch no_competitor.json from GitHub: a flat list of EANs (like
+        master_tracked.json) for which a live buybox check returns
+        "no product url in search results".
+
+        IMPORTANT - what that error actually means: NOT that the article is
+        delisted. It means bol.com's search yields no product page because
+        there is no ACTIVE seller at all. We are the only seller, and our own
+        offer sits at "Niet te koop" precisely because it's too expensive.
+        (Confirmed by Peter on 25 July in the seller account: the articles are
+        simply there, status "Niet te koop", no buybox.) Do not "clean up"
+        these EANs on the assumption they're dead listings - that assumption
+        is what kept them stuck.
+
+        Old behaviour these EANs fell into: not in frozen.json (there's never
+        a win to confirm) and not in big_gap.json (no competitor price, so no
+        gap to measure), so they landed in the NORMAL branch - where every new
+        calendar day resets their price back to the fresh full B-Living
+        klantprijs. They'd drop EUR0.50 per cloud run, but every morning the
+        price sprang back to (nearly) full, re-triggering the exact
+        "too expensive / Niet te koop" state. They could never work their way
+        out.
+
+        Semantics here: exempt from the daily reset (same principle as
+        big_gap.json) but with NORMAL EUR0.50 steps - there is no competitor
+        gap to close, only the minimum price as the end point. So they descend
+        day after day until they hit the floor, instead of resetting.
+
+        Deliberately a SEPARATE file, not folded into big_gap.json: that file
+        also drives the EUR10 step counter and the vliegengordijn exclusion,
+        neither of which applies here.
+        """
+        url = "https://raw.githubusercontent.com/peterhoman/bol-repricing/main/no_competitor.json"
+        try:
+            r = requests.get(url, timeout=15)
+            if r.status_code == 200:
+                return set(r.json())
+        except Exception:
+            pass
+        return set()
+
     def load_state(self) -> dict:
         """Fetch state.json from GitHub (tracks the date of the last repricing run)."""
         url = "https://raw.githubusercontent.com/peterhoman/bol-repricing/main/state.json"
@@ -410,7 +452,8 @@ class RepricingEngine:
         return []
 
     def audit_tracking_consistency(self, adjustments: dict, frozen: dict, big_gap: dict,
-                                    master_tracked: set) -> list:
+                                    master_tracked: set,
+                                    no_competitor: set = frozenset()) -> list:
         """
         Automatic daily/every-run consistency audit (Peter's request, 19 July,
         after having to manually discover a silent-tracking-loss bug himself -
@@ -429,7 +472,7 @@ class RepricingEngine:
              (they're meant to be mutually exclusive states).
           2. No EAN should currently have a REDUCED (non-full) klantprijs
              while being absent from every tracking list
-             (master_tracked/frozen/big_gap) - that exact pattern is what a
+             (master_tracked/frozen/big_gap/no_competitor) - that exact pattern is what a
              silent tracking-loss bug looks like (the bug that hit EAN
              8716522107326 on 19 July).
 
@@ -444,7 +487,8 @@ class RepricingEngine:
             issues.append(f"CONFLICT: {len(overlap)} EAN(s) in BOTH frozen.json and "
                            f"big_gap.json: {sorted(overlap)}")
 
-        all_tracked = master_tracked | set(frozen.keys()) | set(big_gap.keys())
+        all_tracked = (master_tracked | set(frozen.keys()) | set(big_gap.keys())
+                       | set(no_competitor))
         untracked_reductions = []
         for ean, kp in adjustments.items():
             if ean not in self.bliving_klantprijzen:
@@ -454,7 +498,8 @@ class RepricingEngine:
                 untracked_reductions.append(ean)
         if untracked_reductions:
             issues.append(f"UNTRACKED REDUCTION: {len(untracked_reductions)} EAN(s) have a "
-                           f"reduced price but aren't in master_tracked/frozen/big_gap - "
+                           f"reduced price but aren't in "
+                           f"master_tracked/frozen/big_gap/no_competitor - "
                            f"this is the exact silent-tracking-loss pattern found on 19 July: "
                            f"{sorted(untracked_reductions)}")
 
@@ -653,6 +698,7 @@ class RepricingEngine:
         last_published = self.load_last_published_klantprijzen()
         frozen = self.load_frozen_eans()
         big_gap = self.load_big_gap()
+        no_competitor = self.load_no_competitor()
         master_tracked = set(self.load_master_tracked())
 
         # Auto-unfreeze: if a frozen EAN reappears in today's "no buybox" CSV,
@@ -680,6 +726,7 @@ class RepricingEngine:
         print(f"\n[STATELESS] New day reset: {is_new_day} (last state date: {state.get('date')})")
         print(f"[STATELESS] Frozen (buybox already won) EANs: {len(frozen)}")
         print(f"[STATELESS] Big-gap (>=EUR10 behind, exempt from daily reset) EANs: {len(big_gap)}")
+        print(f"[STATELESS] No-competitor (no active seller, exempt from daily reset) EANs: {len(no_competitor)}")
         print(f"[STATELESS] Master-tracked (ever seen in a CSV) EANs: {len(master_tracked)}")
 
         session = requests.Session()
@@ -701,7 +748,8 @@ class RepricingEngine:
         # adding frozen to the union - and to EAN 8716522107326 on 19 July,
         # which was never frozen at all, just a plain active EAN that
         # vanished from one day's CSV - fixed by adding master_tracked.)
-        all_eans = master_tracked | set(self.products.keys()) | set(frozen.keys()) | set(big_gap.keys())
+        all_eans = (master_tracked | set(self.products.keys()) | set(frozen.keys())
+                    | set(big_gap.keys()) | no_competitor)
 
         big_gap_steps_taken = 0
 
@@ -728,6 +776,16 @@ class RepricingEngine:
                 if big_gap[ean] > 0:
                     big_gap[ean] -= 1
                     big_gap_steps_taken += 1
+            elif ean in no_competitor:
+                # No active seller at all (our own offer is "Niet te koop"
+                # because it's too expensive). Exempt from the daily reset -
+                # deliberately NOT `original_klantprijs if is_new_day`, since
+                # that morning snap-back to the full price is exactly what
+                # kept these stuck. Normal EUR0.50 steps: there's no
+                # competitor gap to close, just the minimum price as the end
+                # point.
+                baseline_klantprijs = last_published.get(ean, original_klantprijs)
+                step = 0.50
             else:
                 # Normal EAN: continue within the day, or reset fresh on a new day
                 baseline_klantprijs = original_klantprijs if is_new_day else last_published.get(ean, original_klantprijs)
@@ -770,7 +828,8 @@ class RepricingEngine:
             print(f"Buybox already won (held steady): {len(buybox_won)} articles")
             print(f"Buybox check failed (treated as not-won): {buybox_checks_failed} articles")
 
-        self.audit_tracking_consistency(adjustments, frozen, big_gap, master_tracked)
+        self.audit_tracking_consistency(adjustments, frozen, big_gap, master_tracked,
+                                        no_competitor)
 
         new_state = {"date": today_str}
         return adjustments, new_state, buybox_won
@@ -803,6 +862,7 @@ class RepricingEngine:
         """
         frozen = self.load_frozen_eans()
         big_gap = self.load_big_gap()
+        no_competitor = self.load_no_competitor()
         master_tracked = set(self.load_master_tracked())
         last_published = self.load_last_published_klantprijzen()
 
@@ -821,6 +881,15 @@ class RepricingEngine:
             result = self.check_buybox(ean, session)
             if not result.get("found"):
                 failed += 1
+                # "no product url in search results" specifically means there
+                # is no active seller at all - our own offer is "Niet te koop"
+                # because it's too expensive. Flag it so the cloud run exempts
+                # it from the daily reset and keeps stepping it down (see
+                # load_no_competitor). ONLY this exact error: a timeout or
+                # rate-limit must never land here, or a temporary glitch would
+                # permanently exempt an article from the daily reset.
+                if result.get("error") == "no product url in search results":
+                    no_competitor.add(ean)
                 # Hold the last published (reduced) klantprijs instead of
                 # dropping the EAN from `adjustments` - a dropped EAN gets
                 # regenerated at the fresh FULL klantprijs, silently
@@ -830,6 +899,10 @@ class RepricingEngine:
                     adjustments[ean] = last_published[ean]
                 time.sleep(0.3)
                 continue
+
+            # A product page resolved, so there IS an active seller again -
+            # this EAN no longer belongs on the no-competitor list.
+            no_competitor.discard(ean)
 
             if result.get("has_buybox"):
                 # Already winning right now - freeze it instead of matching
@@ -880,6 +953,11 @@ class RepricingEngine:
 
         self.upload_json_to_github(big_gap, "big_gap.json")
 
+        # Winners are handled by frozen.json - they must never also sit on the
+        # no-competitor list (that would keep stepping a won price down).
+        no_competitor -= set(newly_won)
+        self.upload_json_to_github(sorted(no_competitor), "no_competitor.json")
+
         from datetime import date
         self.upload_json_to_github({"date": date.today().isoformat()}, "state.json")
 
@@ -887,6 +965,7 @@ class RepricingEngine:
         print(f"[MATCH] Already winning (frozen now): {len(newly_won)}")
         print(f"[MATCH] Hit minimum price floor: {at_minimum}")
         print(f"[MATCH] Check failed: {failed}")
+        print(f"[MATCH] No competitor (no active seller, exempt from daily reset): {len(no_competitor)}")
 
         return {
             "matched": len(adjustments) - len(frozen),
