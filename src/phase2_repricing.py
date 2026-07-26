@@ -31,7 +31,7 @@ class RepricingEngine:
         self.load_products()
         self.load_bliving_feed()
 
-    def _get_with_retries(self, url: str, timeout: int = 30, retries: int = 3, backoff: int = 10):
+    def _get_with_retries(self, url: str, timeout: int = 30, retries: int = 5, backoff: int = 10):
         """
         GET a URL with a few retries on connection failures (timeouts,
         DNS hiccups, etc.) before giving up. Added after a couple of
@@ -40,16 +40,27 @@ class RepricingEngine:
         with our code or the repricing logic - retrying a couple of times
         with a short pause turns most of those transient blips into a
         silent success instead of a failed GitHub Actions run.
+
+        The wait DOUBLES per attempt (10s, 20s, 40s, 80s). The old flat
+        3x10s only covered about 2 minutes of supplier downtime, and both
+        failed runs on 25 and 26 July were B-Living being unreachable for
+        just over that - all 3 attempts burned inside the outage. 5 attempts
+        with doubling backoff ride out roughly 5 minutes instead, which
+        turns this class of blip into a silent success. Cron runs are 30
+        minutes apart, so even the longest retry chain can never overlap
+        the next run.
         """
         last_exception = None
+        wait = backoff
         for attempt in range(1, retries + 1):
             try:
                 return requests.get(url, timeout=timeout)
             except requests.exceptions.RequestException as e:
                 last_exception = e
                 if attempt < retries:
-                    print(f"   Attempt {attempt}/{retries} failed ({e}), retrying in {backoff}s...")
-                    time.sleep(backoff)
+                    print(f"   Attempt {attempt}/{retries} failed ({e}), retrying in {wait}s...")
+                    time.sleep(wait)
+                    wait *= 2
         raise last_exception
 
     def load_products(self):
