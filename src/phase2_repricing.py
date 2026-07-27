@@ -236,15 +236,37 @@ class RepricingEngine:
         (not from a "reduction relative to the original price" - that was
         a bug, since it ignored all previous iterations and always reset
         back to "original price - 0.50").
+
+        The klantprijs has to be whole cents and Channable recomputes the
+        price FROM that rounded value, so plain rounding lands the result a
+        cent BELOW the target for about a quarter of all targets. Harmless
+        for a EUR0.50 step, but NOT when the target IS the minimum price -
+        then we publish a cent under the floor, which breaks Peter's hard
+        rule. The audit safety net caught exactly this on its first live run
+        (27 July): 5 articles at EUR14.79 against a EUR14.80 floor.
+
+        So: round, then nudge up a cent at a time until the round-trip no
+        longer undershoots. Never below the requested target, at most a cent
+        or two above. Some targets are simply not reachable to the cent -
+        EUR14.80 needs klantprijs 2.8333, and the nearest cent that doesn't
+        undershoot is 2.84, giving EUR14.82.
         """
         # Try the >= 4 branch first (most products fall here)
         candidate = (target_price - 8) / 2.4
         if candidate >= 4:
-            return round(max(candidate, 0), 2)
+            klantprijs = round(max(candidate, 0), 2)
+        else:
+            # Otherwise use the < 4 branch
+            klantprijs = round(max(((target_price - 8) / 2.4) - 2, 0), 2)
 
-        # Otherwise use the < 4 branch
-        candidate_low = ((target_price - 8) / 2.4) - 2
-        return round(max(candidate_low, 0), 2)
+        # Round-trip through the real formula and nudge up if we undershot.
+        # A cent or two is always enough; the loop bound is just a guard.
+        for _ in range(4):
+            if self.calculate_normal_price(klantprijs) >= target_price - 0.001:
+                break
+            klantprijs = round(klantprijs + 0.01, 2)
+
+        return klantprijs
 
     def generate_reprice_xml(self, output_path: str, adjustments: dict) -> bool:
         """
