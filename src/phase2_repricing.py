@@ -197,8 +197,14 @@ class RepricingEngine:
 
         ONLY UPWARDS, never down. A frozen article sitting comfortably above
         its floor is a winner making margin - it stays exactly where it is.
-        The 0.01 tolerance keeps rounding noise from triggering pointless
-        adjustments.
+
+        The tolerance is 0.005, deliberately SMALLER than a cent. With
+        `< floor - 0.01` an article sitting exactly one cent under the floor
+        slips through - and whether it slips through depends on float
+        representation, so it catches some values and misses others. That is
+        what hid the rounding bug for so long: on 27 July the 0.01 margin
+        reported 0 articles under the floor while 6 were actually a cent
+        under. (BE hit the same thing: 3 reported instead of 85.)
 
         Checked on 27 July: 147 frozen articles in NL, none below their floor
         (same as BE). So this closes a gap rather than repairing known damage.
@@ -214,7 +220,7 @@ class RepricingEngine:
                 continue
             floor = self.calculate_minimum_price(fresh_klantprijs)
             held_price = self.calculate_normal_price(held_klantprijs)
-            if held_price < floor - 0.01:
+            if held_price < floor - 0.005:
                 frozen[ean] = self.calculate_klantprijs_for_target_price(floor)
                 lifted.append((ean, held_price, floor))
                 print(f"   [FLOOR] {ean}: EUR{held_price:.2f} -> EUR{floor:.2f} "
@@ -592,7 +598,9 @@ class RepricingEngine:
                 continue
             floor = self.calculate_minimum_price(self.bliving_klantprijzen[ean])
             price = self.calculate_normal_price(kp)
-            if price < floor - 0.01:
+            # 0.005, not 0.01 - see clamp_frozen_to_floor: a full-cent margin
+            # lets exactly-one-cent-under slip past, unreliably at that.
+            if price < floor - 0.005:
                 below_floor.append(f"{ean} (EUR{price:.2f} < floor EUR{floor:.2f})")
         if below_floor:
             issues.append(f"BELOW MINIMUM PRICE: {len(below_floor)} EAN(s) would be "
