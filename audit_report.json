@@ -1,7 +1,5 @@
 {
-  "checked_at": "2026-07-27T06:01:23.964917",
-  "issues_found": 1,
-  "issues": [
-    "BELOW MINIMUM PRICE: 5 EAN(s) would be published under their current floor - we never sell below the minimum price: ['8716522024258 (EUR44.26 < floor EUR44.27)', '8717266051456 (EUR14.79 < floor EUR14.80)', '8717266051531 (EUR14.79 < floor EUR14.80)', '8717266051616 (EUR14.79 < floor EUR14.80)', '8717266051715 (EUR14.79 < floor EUR14.80)']"
-  ]
+  "checked_at": "2026-07-27T06:05:18.352163",
+  "issues_found": 0,
+  "issues": []
 }
