@@ -229,6 +229,52 @@ class RepricingEngine:
             print(f"[FLOOR] Lifted {len(lifted)} frozen article(s) back to their minimum price")
         return lifted
 
+    def clamp_frozen_to_normal_price(self, frozen: dict) -> list:
+        """
+        Counterpart to clamp_frozen_to_floor: lower any frozen article that
+        sits ABOVE its own current normal price back down to that price.
+        Modifies `frozen` in place, returns (ean, old_price, new_price) tuples.
+
+        Why: a frozen price is held forever and, until now, was only ever
+        revised UPWARDS. So when B-Living LOWERS a purchase price, the frozen
+        article keeps its old, now too-high price. Nothing corrects that while
+        it stays frozen.
+
+        That is not extra margin - it is a leftover from an old cost basis. The
+        normal price is by definition what we would ask for that article at its
+        current purchase price, so coming back down to it gives up nothing we
+        would otherwise have charged.
+
+        Measured on 29 July over 58 snapshots of frozen.json (1-28 July):
+        10 of 155 frozen articles sat above their own normal price, on average
+        EUR2.66 too high (one B-Living price drop on a whole folie range hit
+        four of them at once). They lost the buybox far more often than the
+        rest: 80% had 5+ buybox flips against 33% for the others, averaging
+        12.9 flips against 3.8. The cycle was: hold too high -> lose the buybox
+        -> auto-unfreeze next day -> grind back down -> win -> freeze -> repeat.
+
+        Note we assign the FRESH klantprijs directly instead of inverting
+        calculate_klantprijs_for_target_price(normal_price). The fresh
+        klantprijs IS the value that produces the normal price, so this is
+        exact and idempotent; going through the inverse would round a cent up
+        and re-trigger this same correction on every following run.
+        """
+        lowered = []
+        for ean, held_klantprijs in list(frozen.items()):
+            fresh_klantprijs = self.bliving_klantprijzen.get(ean)
+            if fresh_klantprijs is None:
+                continue
+            normal_price = self.calculate_normal_price(fresh_klantprijs)
+            held_price = self.calculate_normal_price(held_klantprijs)
+            if held_price > normal_price + 0.005:
+                frozen[ean] = fresh_klantprijs
+                lowered.append((ean, held_price, normal_price))
+                print(f"   [DRIFT] {ean}: EUR{held_price:.2f} -> EUR{normal_price:.2f} "
+                      f"(supplier price fell, back to normal price)")
+        if lowered:
+            print(f"[DRIFT] Lowered {len(lowered)} frozen article(s) to their current normal price")
+        return lowered
+
     def calculate_klantprijs_for_target_price(self, target_price: float) -> float:
         """
         Calculate the klantprijs needed to make Channable produce target_price
@@ -818,8 +864,11 @@ class RepricingEngine:
             self.upload_json_to_github(frozen, "frozen.json")
 
         # Frozen prices are held indefinitely, so they're the one path that
-        # never re-checks the floor on its own - see clamp_frozen_to_floor.
-        if self.clamp_frozen_to_floor(frozen):
+        # never re-checks its own bounds - see clamp_frozen_to_floor (purchase
+        # price rose) and clamp_frozen_to_normal_price (purchase price fell).
+        frozen_changed = self.clamp_frozen_to_floor(frozen)
+        frozen_changed += self.clamp_frozen_to_normal_price(frozen)
+        if frozen_changed:
             self.upload_json_to_github(frozen, "frozen.json")
 
         # Grow master_tracked with today's CSV + anything just auto-unfrozen.
@@ -976,8 +1025,10 @@ class RepricingEngine:
         last_published = self.load_last_published_klantprijzen()
 
         # This run republishes every frozen price into the XML as well, so it
-        # must not carry a stale one that has fallen under its floor.
+        # must not carry a stale one - neither under its floor nor above its
+        # own current normal price.
         frozen_lifted = self.clamp_frozen_to_floor(frozen)
+        frozen_lifted += self.clamp_frozen_to_normal_price(frozen)
 
         candidates = (set(self.products.keys()) | big_gap.keys() | master_tracked) - set(frozen.keys())
         candidates = {ean for ean in candidates if ean in self.bliving_klantprijzen}
