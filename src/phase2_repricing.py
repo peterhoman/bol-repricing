@@ -1069,9 +1069,18 @@ class RepricingEngine:
             no_competitor.discard(ean)
 
             if result.get("has_buybox"):
-                # Already winning right now - freeze it instead of matching
+                # Already winning right now - freeze it instead of matching.
+                # Use the canonical inverse, NOT a hand-rolled (price-8)/2.4:
+                # that ignores the <4 branch, so any winning price whose
+                # klantprijs lands under 4 was stored 2 too high, and Channable
+                # then republished the article at (kp+2)*2.4+8 - exactly EUR4.80
+                # above the price we had just won at. It promptly lost the
+                # buybox, ground back down, won, froze too high again... Found
+                # on 30 July: 4 frozen articles sat EUR4.80 over their winning
+                # price, and three of them were the worst flippers in the whole
+                # set (21, 17 and 13 buybox changes in four weeks).
                 price = float(result.get("price"))
-                newly_won[ean] = round((price - 8) / 2.4, 2)
+                newly_won[ean] = self.calculate_klantprijs_for_target_price(price)
                 big_gap.pop(ean, None)
                 time.sleep(0.3)
                 continue
