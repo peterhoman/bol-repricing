@@ -117,7 +117,11 @@ def main():
         if result.get("found"):
             if result.get("has_buybox"):
                 price = float(result.get("price"))
-                new_wins[ean] = round((price - 8) / 2.4, 2)
+                # Canonical inverse - a hand-rolled (price-8)/2.4 skips the
+                # <4 branch and stores the klantprijs 2 too high, which
+                # republishes the article EUR4.80 above the winning price.
+                # Same bug as in match_competitor_prices, fixed 30 July.
+                new_wins[ean] = engine.calculate_klantprijs_for_target_price(price)
             else:
                 competitor_price = float(result.get("price"))
                 our_klantprijs = last_published.get(ean, engine.bliving_klantprijzen.get(ean, 0))
