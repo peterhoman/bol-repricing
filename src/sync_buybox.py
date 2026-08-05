@@ -19,6 +19,7 @@ Usage:
 """
 import os
 import sys
+import csv
 import json
 import time
 import base64
@@ -60,19 +61,47 @@ def trigger_workflow():
 
 
 def add_eans_to_csv(eans):
-    """Re-add EANs (that lost buybox and dropped out of tracking) to the CSV."""
+    """
+    Re-add EANs (that lost buybox and dropped out of tracking) to the CSV.
+
+    Columns are located BY NAME, not by position. Peter can usually not
+    download bol.com's "no buybox" export and then pastes just Productnaam
+    and EAN into a two-column CSV. This function used to write row[0],
+    row[1] and row[2] by index, which works on the wide bol.com export
+    (~225 columns) but raises an IndexError on the two-column file - at
+    exactly the wrong moment, because an article that just lost its buybox
+    would then not be put back in the list at all.
+
+    remove_eans_from_csv() in the engine already looked columns up by name;
+    this was the only place left that did not. (Same fix as BE, 5 August.)
+
+    "Interne referentie" only exists in the wide export, where it repeats
+    the EAN - fill it when present, skip it when absent.
+    """
     if not eans:
         return
     headers = github_headers()
     api_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/bolcom_productinformatie.csv"
     raw = requests.get(CSV_URL, timeout=30).text
     lines = raw.rstrip("\n").split("\n")
-    num_cols = len(lines[0].split(";"))
+
+    header_cols = [c.strip().strip('"') for c in next(csv.reader([lines[0]], delimiter=';'))]
+    num_cols = len(header_cols)
+    try:
+        ean_idx = header_cols.index("EAN")
+    except ValueError:
+        print("   [WARN] No EAN column in CSV header - not re-adding anything")
+        return False
+    naam_idx = header_cols.index("Productnaam") if "Productnaam" in header_cols else None
+    ref_idx = header_cols.index("Interne referentie") if "Interne referentie" in header_cols else None
+
     for ean in eans:
         row = [""] * num_cols
-        row[0] = f"Hersteld na koopblok-verlies {ean}"
-        row[1] = ean
-        row[2] = ean
+        row[ean_idx] = ean
+        if naam_idx is not None:
+            row[naam_idx] = f"Hersteld na koopblok-verlies {ean}"
+        if ref_idx is not None:
+            row[ref_idx] = ean
         lines.append(";".join(row))
     new_content = "\n".join(lines)
     content_b64 = base64.b64encode(new_content.encode("utf-8")).decode("utf-8")
