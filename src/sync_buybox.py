@@ -157,11 +157,25 @@ def main():
                 our_price = engine.calculate_normal_price(our_klantprijs)
                 gap = round(our_price - competitor_price, 2)
 
-                if gap >= 10 and not engine.is_excluded_from_big_steps(ean):
+                # Only worth EUR10 steps if the competitor is actually ABOVE
+                # our minimum price. If they sit below it, the gap can never
+                # be closed - the floor stops us long before we get there -
+                # and the flag just comes back every sync while the morning
+                # fast-start clears it again. (Seen 11-12 August: the same 6
+                # EANs re-flagged every round, one of them EUR108.13 floor
+                # against a EUR49.99 competitor - less than half our floor.)
+                # No money was lost, the floor held, but it was a loop that
+                # suggested action where none is possible.
+                floor = engine.calculate_minimum_price(
+                    engine.bliving_klantprijzen.get(ean, 0))
+                haalbaar = competitor_price - floor > 0.005
+
+                if gap >= 10 and haalbaar and not engine.is_excluded_from_big_steps(ean):
                     big_gap_added[ean] = int(gap // 10)
                 elif ean in big_gap:
-                    # Gap has closed (or item no longer qualifies) - remove
-                    # the exemption so it rejoins normal daily-reset behavior
+                    # Gap closed, competitor dropped under our floor, or the
+                    # item no longer qualifies - drop the exemption so it
+                    # rejoins normal daily-reset behavior
                     big_gap_cleared.append(ean)
         time.sleep(0.3)
         if (i + 1) % 50 == 0:
