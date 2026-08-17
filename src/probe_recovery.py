@@ -184,7 +184,8 @@ def phase_candidates(limit):
 
 
 def phase_auto(limit):
-    lopend = fetch_json("frozen_probe_backup.json", {})
+    lopend = {k: v for k, v in fetch_json("frozen_probe_backup.json", {}).items()
+              if not k.startswith("_")}
     if lopend:
         print(f"\n[STOP] Er loopt nog een probe over {len(lopend)} artikel(en).")
         print("Rond die eerst af:  python src/probe_recovery.py check")
@@ -199,9 +200,21 @@ def phase_auto(limit):
 
 
 def phase_start(eans):
+    # Geen probe meer na 20:30: Channable importeert 's avonds niet meer, dus
+    # de artikelen zouden de hele nacht op volle prijs staan zonder dat de
+    # check nog iets kan verifieren. Kan gebeuren als de taakplanner een
+    # gemiste taak 's avonds inhaalt (-StartWhenAvailable).
+    nu = datetime.now()
+    if (nu.hour, nu.minute) >= (20, 30):
+        print(f"[GEWEIGERD] Het is {nu:%H:%M} - na 20:30 geen probe meer starten "
+              f"(Channable importeert vanavond niet meer). Morgen draait de "
+              f"geplande ronde gewoon.")
+        return
+
     engine = RepricingEngine(CSV_URL)
     frozen = fetch_json("frozen.json", {})
     probe_backup = fetch_json("frozen_probe_backup.json", {})
+    probe_backup.pop("_gestart", None)
 
     updated = 0
     for ean in eans:
@@ -226,6 +239,10 @@ def phase_start(eans):
         print("\n[DONE] Nothing to probe")
         return
 
+    # Starttijd bij de backup, zodat check kan weigeren als hij te vroeg
+    # draait. Sleutel begint met _ zodat hij nooit als EAN gelezen wordt.
+    probe_backup["_gestart"] = datetime.now().isoformat(timespec="seconds")
+
     upload_json(frozen, "frozen.json", f"Probe recovery: test {updated} EAN(s) at full price")
     upload_json(probe_backup, "frozen_probe_backup.json", f"Backup before probing {updated} EAN(s)")
     trigger_workflow()
@@ -237,9 +254,25 @@ def phase_start(eans):
 
 def phase_check():
     probe_backup = fetch_json("frozen_probe_backup.json", {})
+    gestart = probe_backup.pop("_gestart", None)
     if not probe_backup:
         print("[DONE] No probes currently in progress")
         return
+
+    # Te vroeg checken leest de OUDE prijs (Channable heeft de verhoging dan
+    # nog niet geimporteerd), ziet daardoor "koopblok behouden" en houdt een
+    # prijs vast die in werkelijkheid niet wint. Minimaal 30 minuten wachten;
+    # de backup blijft staan, dus later opnieuw checken kan gewoon.
+    if gestart:
+        try:
+            verstreken = (datetime.now() - datetime.fromisoformat(gestart)).total_seconds() / 60
+        except ValueError:
+            verstreken = None
+        if verstreken is not None and verstreken < 30:
+            print(f"[GEWEIGERD] Probe is pas {verstreken:.0f} minuten geleden gestart "
+                  f"({gestart}). Minimaal 30 minuten wachten, anders lees je de oude "
+                  f"prijs en houd je een niet-winnende prijs vast. Backup blijft staan.")
+            return
 
     engine = RepricingEngine(CSV_URL)
     frozen = fetch_json("frozen.json", {})
