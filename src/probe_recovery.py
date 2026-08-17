@@ -119,7 +119,13 @@ def select_candidates(engine, limit=DEFAULT_BATCH):
     history = fetch_json("probe_history.json", {})
 
     grens = (date.today() - timedelta(days=COOLDOWN_DAYS)).isoformat()
-    in_afkoeling = {e for e, d in history.items() if d >= grens}
+    # Oude vorm was {ean: "JJJJ-MM-DD"}, nieuwe is {ean: {"datum": ..., ...}}.
+    # Beide blijven werken zodat bestaande geschiedenis niet verloren gaat.
+    in_afkoeling = set()
+    for e, v in history.items():
+        datum = v.get("datum") if isinstance(v, dict) else v
+        if datum and datum >= grens:
+            in_afkoeling.add(e)
 
     kandidaten = []
     stat = {"bevroren": len(frozen), "niet_in_feed": 0, "op_volle_prijs": 0,
@@ -261,12 +267,28 @@ def phase_check():
     # weg. Zowel behouden als teruggezette EAN's, zodat select_candidates ze de
     # komende COOLDOWN_DAYS overslaat - een teruggezet artikel staat morgen
     # anders meteen weer bovenaan.
+    # Naast de datum ook de UITKOMST, de winst waarop geselecteerd is en de
+    # titel. Drie selectiecriteria zijn getest en alle drie voorspellen niets
+    # (bedrag, dagen onafgebroken bevroren, productgroep - zie HANDOFF.md).
+    # Daarom niet verder zoeken maar gewoon vastleggen: na een aantal rondes
+    # is er genoeg data om te zien of er toch een patroon in zit. Afspraak met
+    # de BE-chat, 17 augustus.
     history = fetch_json("probe_history.json", {})
     vandaag = date.today().isoformat()
-    for ean in probe_backup:
-        history[ean] = vandaag
+    for ean, oud_kp in probe_backup.items():
+        fresh = engine.bliving_klantprijzen.get(ean)
+        winst = (round(engine.calculate_normal_price(fresh)
+                       - engine.calculate_normal_price(oud_kp), 2)
+                 if fresh is not None else None)
+        history[ean] = {
+            "datum": vandaag,
+            "uitkomst": "behouden" if ean in kept else "terug",
+            "winst": winst,
+            "titel": engine.bliving_titels.get(ean, "")[:60],
+        }
     upload_json(history, "probe_history.json",
-                f"Probe history: {len(probe_backup)} EAN(s) probed on {vandaag}")
+                f"Probe history: {len(probe_backup)} EAN(s) probed on {vandaag} "
+                f"({len(kept)} kept, {len(reverted)} reverted)")
 
     upload_json({}, "frozen_probe_backup.json", "Clear probe backup - probe cycle complete")
     if reverted:
