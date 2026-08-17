@@ -1,0 +1,12 @@
+[
+  {
+    "task": "selftest",
+    "started": "2026-08-17T16:12:36",
+    "duration_s": 0,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "selftest - scheduler reached the script"
+    ]
+  }
+]
