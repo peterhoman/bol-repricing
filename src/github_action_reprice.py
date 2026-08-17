@@ -12,13 +12,48 @@ import os
 import sys
 from pathlib import Path
 
+import requests
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from phase2_repricing import RepricingEngine
 
 CSV_URL = "https://raw.githubusercontent.com/peterhoman/bol-repricing/main/bolcom_productinformatie.csv"
+RAW_BASE = "https://raw.githubusercontent.com/peterhoman/bol-repricing/main"
+
+
+def preflight_or_die():
+    """
+    Refuse to run at all while raw.githubusercontent.com is misbehaving.
+
+    Why this exists (found in BE on 17 August, hit NL just as hard): every
+    load_* function in the engine silently returns {}/[] on a non-200
+    response. During a raw-URL outage (429 rate limiting - Channable got the
+    same error on both feeds that day) a run therefore sees "no frozen, no
+    tracking, fresh day" and publishes a feed with EVERYTHING at full price -
+    wiping every frozen winner in a single upload.
+
+    A skipped run keeps yesterday's feed, which is always better than a
+    destroyed one. So: if any of these state files fails to load, exit(1)
+    WITHOUT uploading anything. Red workflow mails during such an outage are
+    deliberate and safe.
+    """
+    for filename in ("frozen.json", "state.json", "master_tracked.json"):
+        try:
+            r = requests.get(f"{RAW_BASE}/{filename}", timeout=30)
+            status = r.status_code
+        except Exception as exc:
+            status = f"error: {exc}"
+        if status != 200:
+            print(f"\n[PREFLIGHT] {filename} not readable ({status}) - "
+                  f"aborting WITHOUT uploading. Yesterday's feed stays live.")
+            sys.exit(1)
+    print("[PREFLIGHT] state files reachable, proceeding")
+
 
 if __name__ == "__main__":
+    preflight_or_die()
+
     engine = RepricingEngine(CSV_URL)
 
     if not engine.products:
