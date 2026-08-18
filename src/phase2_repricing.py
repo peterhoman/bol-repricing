@@ -31,6 +31,31 @@ class RepricingEngine:
         self.load_products()
         self.load_bliving_feed()
 
+    @staticmethod
+    def _fresh_headers(url: str) -> dict:
+        """
+        Headers om een GitHub Contents-API-URL als kale bestandsinhoud te lezen.
+
+        Waarom: raw.githubusercontent.com zit achter een CDN die minutenlang een
+        oude versie kan serveren - ook van een bestand dat WIJZELF net via de
+        API hebben geschreven. Dat beet ons op 18 augustus: add_eans_to_csv las
+        de CSV via raw vlak na remove_eans_from_csv's API-write, kreeg de oude
+        versie, en zette daarmee de zojuist verwijderde sync-winnaars terug in
+        de CSV - waarna de cloud-run ze allemaal auto-ontdooide (in BE 18
+        winnaars gewist, 23 seconden na de sync; NL ontsnapte op geluk).
+
+        Met `Accept: application/vnd.github.raw` geeft de Contents-API dezelfde
+        kale tekst als de raw-URL, maar altijd vers. Voor niet-API-URLs (zoals
+        de B-Living-feed) geeft dit lege headers en verandert er niets.
+        """
+        if "api.github.com" not in url:
+            return {}
+        headers = {"Accept": "application/vnd.github.raw"}
+        token = os.getenv("GITHUB_TOKEN")
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        return headers
+
     def _get_with_retries(self, url: str, timeout: int = 30, retries: int = 5, backoff: int = 10):
         """
         GET a URL with a few retries on connection failures (timeouts,
@@ -54,7 +79,7 @@ class RepricingEngine:
         wait = backoff
         for attempt in range(1, retries + 1):
             try:
-                return requests.get(url, timeout=timeout)
+                return requests.get(url, timeout=timeout, headers=self._fresh_headers(url))
             except requests.exceptions.RequestException as e:
                 last_exception = e
                 if attempt < retries:
@@ -701,7 +726,9 @@ class RepricingEngine:
         }
 
         try:
-            raw = requests.get(self.csv_path, timeout=30).text
+            # Via _get_with_retries: die zet de verse-lees-headers als csv_path
+            # een Contents-API-URL is (zie _fresh_headers - raw kan verouderd zijn)
+            raw = self._get_with_retries(self.csv_path).text
             lines = raw.rstrip("\n").split("\n")
 
             header_cols = next(csv.reader([lines[0]], delimiter=';'))
@@ -1263,7 +1290,7 @@ class RepricingEngine:
 
 if __name__ == "__main__":
     # GitHub raw URL for daily CSV (always the same filename - Peter overwrites this file each morning)
-    csv_url = "https://raw.githubusercontent.com/peterhoman/bol-repricing/main/bolcom_productinformatie.csv"
+    csv_url = "https://api.github.com/repos/peterhoman/bol-repricing/contents/bolcom_productinformatie.csv"
 
     engine = RepricingEngine(csv_url)
 
