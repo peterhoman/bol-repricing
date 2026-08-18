@@ -31,7 +31,7 @@ from phase2_repricing import RepricingEngine
 
 load_dotenv()
 
-CSV_URL = "https://raw.githubusercontent.com/peterhoman/bol-repricing/main/bolcom_productinformatie.csv"
+CSV_URL = "https://api.github.com/repos/peterhoman/bol-repricing/contents/bolcom_productinformatie.csv"
 GITHUB_REPO = os.getenv("GITHUB_REPO")
 
 
@@ -82,7 +82,16 @@ def add_eans_to_csv(eans):
         return
     headers = github_headers()
     api_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/bolcom_productinformatie.csv"
-    raw = requests.get(CSV_URL, timeout=30).text
+    # Lees via de Contents-API met het raw-mediatype: altijd vers. De raw-URL
+    # zit achter een CDN die na onze EIGEN remove_eans_from_csv-write nog
+    # minutenlang de oude versie kan geven - waardoor deze functie de zojuist
+    # verwijderde sync-winnaars ongemerkt terugzette in de CSV en de cloud-run
+    # ze auto-ontdooide (BE, 18/8: 18 winnaars gewist 23 s na de sync).
+    leeskop = {"Accept": "application/vnd.github.raw"}
+    token = os.getenv("GITHUB_TOKEN")
+    if token:
+        leeskop["Authorization"] = f"Bearer {token}"
+    raw = requests.get(CSV_URL, timeout=30, headers=leeskop).text
     lines = raw.rstrip("\n").split("\n")
 
     header_cols = [c.strip().strip('"') for c in next(csv.reader([lines[0]], delimiter=';'))]
