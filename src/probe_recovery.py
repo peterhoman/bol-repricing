@@ -48,7 +48,7 @@ from phase2_repricing import RepricingEngine
 from dotenv import load_dotenv
 load_dotenv()
 
-CSV_URL = "https://raw.githubusercontent.com/peterhoman/bol-repricing/main/bolcom_productinformatie.csv"
+CSV_URL = "https://api.github.com/repos/peterhoman/bol-repricing/contents/bolcom_productinformatie.csv"
 GITHUB_REPO = os.getenv("GITHUB_REPO")
 
 # MIN_GAIN is de belangrijkste knop. BE meette dat de opbrengst hieronder
