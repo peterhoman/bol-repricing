@@ -133,5 +133,31 @@
       "[PROBE] 8717266392474: 31.47 -> 38.8 (price 83.53 -> 101.12)",
       "[PROBE] 8716522090772: 39.51 -> 46.06 (price 102.82 -> 118.54)"
     ]
+  },
+  {
+    "task": "probe_check",
+    "started": "2026-08-19T11:30:02",
+    "duration_s": 36,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[REVERTED] 8716522090611: lost buybox - restored to safe price 222.99",
+      "[REVERTED] 8716522051384: lost buybox - restored to safe price 112.99",
+      "[REVERTED] 8716522091397: lost buybox - restored to safe price 118.84",
+      "[REVERTED] 8716522091403: lost buybox - restored to safe price 118.84",
+      "[REVERTED] 8716522070477: lost buybox - restored to safe price 118.84",
+      "[REVERTED] 8716522103755: lost buybox - restored to safe price 108.84",
+      "[REVERTED] 8716522089578: lost buybox - restored to safe price 129.67",
+      "[REVERTED] 8716522092196: lost buybox - restored to safe price 35.49",
+      "[REVERTED] 8716522088045: lost buybox - restored to safe price 36.45",
+      "[REVERTED] 8716522106756: lost buybox - restored to safe price 34.37",
+      "[REVERTED] 8716522106763: lost buybox - restored to safe price 34.37",
+      "[REVERTED] 8716522107265: lost buybox - restored to safe price 35.77",
+      "[REVERTED] 8717266392504: lost buybox - restored to safe price 31.47",
+      "[REVERTED] 8717266392474: lost buybox - restored to safe price 31.47",
+      "[KEPT] 8716522090772: still has buybox at the higher price - margin recovered!",
+      "[DONE] Kept higher price: 1 | Reverted to safe price: 14",
+      "[LET OP] Draai de komende ~90 minuten GEEN sync_buybox.py."
+    ]
   }
 ]
