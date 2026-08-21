@@ -112,9 +112,16 @@ def run(task_name):
     cmd = [sys.executable, str(BASE / "src" / script)] + args
 
     try:
+        # CREATE_NO_WINDOW: the child must not open a console either. The
+        # scheduled task runs under pythonw.exe (no window), but a plain
+        # subprocess.run would still pop one up for the child - and a human at
+        # the PC closing that window kills the whole tree (0xC000013A,
+        # STATUS_CONTROL_C_EXIT) before the log is pushed. BE lost its probe
+        # round of 20 August exactly that way.
+        flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
         proc = subprocess.run(cmd, cwd=str(BASE), capture_output=True,
                               text=True, encoding="utf-8", errors="replace",
-                              timeout=45 * 60)
+                              timeout=45 * 60, creationflags=flags)
         output = (proc.stdout or "") + (proc.stderr or "")
         exit_code = proc.returncode
     except subprocess.TimeoutExpired:
