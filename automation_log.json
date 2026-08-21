@@ -271,5 +271,18 @@
       "[MATCH] Check failed: 9",
       "[MATCH] No competitor (no active seller, exempt from daily reset): 8"
     ]
+  },
+  {
+    "task": "probe_start",
+    "started": "2026-08-21T10:00:00",
+    "duration_s": 16,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[PROBE] 8716522071818: 24.02 -> 28.63 (price 65.65 -> 76.71)",
+      "[PROBE] 8717266385179: 17.41 -> 21.99 (price 49.78 -> 60.78)",
+      "[PROBE] 8717266342066: 17.41 -> 21.99 (price 49.78 -> 60.78)",
+      "[PROBE] 8717266342011: 17.41 -> 21.99 (price 49.78 -> 60.78)"
+    ]
   }
 ]
