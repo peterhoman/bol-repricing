@@ -47,6 +47,6 @@ Write-Host "Klaar. Controle:"
 Get-ScheduledTask -TaskName "Bol NL*" | Select-Object TaskName, State | Format-Table -AutoSize
 
 Write-Host ""
-Write-Host "Klaar. De nieuwe tijden gelden vanaf de eerstvolgende dag."
+Write-Host "Klaar. Wijzigingen gelden vanaf de eerstvolgende geplande run (de taken draaien onzichtbaar via pythonw)."
 Write-Host "(Geen teststart meer - de taken zijn al bewezen werkend op 17/8.)"
 pause
