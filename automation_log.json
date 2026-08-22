@@ -325,5 +325,21 @@
       "[MATCH] Check failed: 9",
       "[MATCH] No competitor (no active seller, exempt from daily reset): 8"
     ]
+  },
+  {
+    "task": "morning",
+    "started": "2026-08-22T09:45:00",
+    "duration_s": 199,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[CSV] upload van vandaag (06:19 UTC) - verse lijst",
+      "[MATCH] Checking 179 active EAN(s) for immediate price-matching...",
+      "[MATCH] Matched (undercut competitor): 179",
+      "[MATCH] Already winning (frozen now): 0",
+      "[MATCH] Hit minimum price floor: 142",
+      "[MATCH] Check failed: 9",
+      "[MATCH] No competitor (no active seller, exempt from daily reset): 8"
+    ]
   }
 ]
