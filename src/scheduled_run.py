@@ -86,6 +86,29 @@ def push_log_entry(entry):
         return False
 
 
+def csv_freshness_note():
+    """
+    One line for the log saying whether bolcom_productinformatie.csv was
+    uploaded today. The morning fast-start is only as good as the list it
+    runs on; if Peter uploads after the task has fired (weekends especially),
+    the run silently uses yesterday's list. This makes that visible in
+    automation_log.json instead of leaving it to guesswork.
+    """
+    try:
+        r = requests.get(
+            f"https://api.github.com/repos/{GITHUB_REPO}/commits",
+            params={"path": "bolcom_productinformatie.csv", "per_page": 1},
+            headers=github_headers(), timeout=20)
+        stamp = r.json()[0]["commit"]["committer"]["date"]   # UTC, bv. 2026-08-22T06:12:16Z
+        upload_dag = stamp[:10]
+        vandaag = datetime.utcnow().strftime("%Y-%m-%d")
+        if upload_dag == vandaag:
+            return f"[CSV] upload van vandaag ({stamp[11:16]} UTC) - verse lijst"
+        return f"[LET OP] CSV is NIET van vandaag (laatste upload {stamp[:16]} UTC) - snelstart draait op de oude lijst"
+    except Exception as exc:
+        return f"[CSV] uploaddatum niet te bepalen ({exc})"
+
+
 def run(task_name):
     if task_name == "selftest":
         entry = {
@@ -109,6 +132,7 @@ def run(task_name):
 
     script, args = TASKS[task_name]
     started = datetime.now()
+    csv_note = csv_freshness_note() if task_name == "morning" else None
     cmd = [sys.executable, str(BASE / "src" / script)] + args
 
     try:
@@ -123,6 +147,8 @@ def run(task_name):
                               text=True, encoding="utf-8", errors="replace",
                               timeout=45 * 60, creationflags=flags)
         output = (proc.stdout or "") + (proc.stderr or "")
+        if csv_note:
+            output = csv_note + chr(10) + output
         exit_code = proc.returncode
     except subprocess.TimeoutExpired:
         output = "TIMEOUT: script ran longer than 45 minutes and was killed"
@@ -140,7 +166,7 @@ def run(task_name):
                    if ln.strip().startswith(("[MATCH]", "[DONE]", "[PROBE]", "[KEPT]",
                                              "[REVERTED]", "[AUTO]", "[ERROR]", "[STOP]",
                                              "[GEWEIGERD]", "[LET OP]", "[AUDIT]",
-                                             "[FLOOR]", "[WARN]", "TIMEOUT", "CRASH"))]
+                                             "[FLOOR]", "[WARN]", "[CSV]", "TIMEOUT", "CRASH"))]
 
     entry = {
         "task": task_name,
