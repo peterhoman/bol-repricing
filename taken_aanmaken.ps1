@@ -21,7 +21,7 @@ if (-not (Test-Path $py)) { Write-Host "FOUT: python niet gevonden op $py"; paus
 if (-not (Test-Path "$base\src\scheduled_run.py")) { Write-Host "FOUT: scheduled_run.py niet gevonden"; pause; exit 1 }
 
 $taken = @(
-    @{Naam="Bol NL 1 - ochtend snelstart"; Tijd="08:15"; Arg="morning"},
+    @{Naam="Bol NL 1 - ochtend snelstart"; Tijd="08:15"; Arg="morning"},   # weekend: 09:45, zie hieronder
     @{Naam="Bol NL 2 - probe starten";     Tijd="10:00"; Arg="probe_start"},
     @{Naam="Bol NL 3 - probe controleren"; Tijd="11:30"; Arg="probe_check"},
     @{Naam="Bol NL 4 - sync ronde";        Tijd="13:30"; Arg="sync"}
@@ -31,7 +31,17 @@ foreach ($t in $taken) {
     $actie = New-ScheduledTaskAction -Execute $py `
         -Argument "`"$base\src\scheduled_run.py`" $($t.Arg)" `
         -WorkingDirectory $base
-    $trigger = New-ScheduledTaskTrigger -Daily -At $t.Tijd
+    if ($t.Arg -eq "morning") {
+        # Snelstart: doordeweeks 08:15, in het weekend 09:45. Peters
+        # weekend-uploads lagen tussen 07:30 en 09:36 (gemeten aug '26);
+        # een vaste 08:15 draaide dan op de lijst van gisteren.
+        $trigger = @(
+            (New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday -At $t.Tijd),
+            (New-ScheduledTaskTrigger -Weekly -DaysOfWeek Saturday,Sunday -At "09:45")
+        )
+    } else {
+        $trigger = New-ScheduledTaskTrigger -Daily -At $t.Tijd
+    }
     # -WakeToRun: haalt de pc uit de slaapstand voor deze taak
     # -StartWhenAvailable: draait alsnog als het tijdstip gemist werd (pc was uit)
     $instellingen = New-ScheduledTaskSettingsSet -WakeToRun `
