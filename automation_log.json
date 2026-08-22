@@ -363,5 +363,16 @@
       "[REVERTED] 8714918021768: lost buybox - restored to safe price 19.45",
       "[REVERTED] 8714918024394: lost buybox - restored to safe price 19.45"
     ]
+  },
+  {
+    "task": "sync",
+    "started": "2026-08-22T13:30:01",
+    "duration_s": 494,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[DONE] Frozen total now: 177 (+5 new, -3 unfrozen)",
+      "[DONE] Big-gap total now: 0 (+0 new, -0 cleared)"
+    ]
   }
 ]
