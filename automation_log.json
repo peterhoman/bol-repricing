@@ -390,5 +390,15 @@
       "[MATCH] Check failed: 9",
       "[MATCH] No competitor (no active seller, exempt from daily reset): 8"
     ]
+  },
+  {
+    "task": "probe_start",
+    "started": "2026-08-23T10:00:02",
+    "duration_s": 15,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[PROBE] 8717774820230: 79.59 -> 99.6 (price 199.02 -> 247.04)"
+    ]
   }
 ]
