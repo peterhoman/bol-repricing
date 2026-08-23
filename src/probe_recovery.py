@@ -283,7 +283,19 @@ def phase_check():
     remaining_backup = {}
 
     for ean, old_klantprijs in probe_backup.items():
-        result = engine.check_buybox(ean, session)
+        # Een netwerkhapering mag de hele ronde niet omvergooien. Op 22
+        # augustus sloot bol.com de verbinding halverwege (RemoteDisconnected);
+        # het script crashte VOOR de upload, waardoor frozen.json niet werd
+        # bijgewerkt en de backup bleef staan - wat de probe van de volgende
+        # dag blokkeerde. Een mislukte check telt nu als "geen koopblok", en
+        # dat is de veilige kant: het artikel gaat terug naar zijn veilige
+        # prijs in plaats van op de probe-prijs te blijven staan.
+        try:
+            result = engine.check_buybox(ean, session)
+        except Exception as exc:
+            print(f"[WARN] {ean}: check mislukt ({type(exc).__name__}) - "
+                  f"behandeld als koopblok kwijt, prijs gaat terug")
+            result = {"found": False}
         if result.get("found") and result.get("has_buybox"):
             kept.append(ean)
             print(f"[KEPT] {ean}: still has buybox at the higher price - margin recovered!")
