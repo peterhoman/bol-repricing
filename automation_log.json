@@ -400,5 +400,17 @@
     "summary": [
       "[PROBE] 8717774820230: 79.59 -> 99.6 (price 199.02 -> 247.04)"
     ]
+  },
+  {
+    "task": "probe_check",
+    "started": "2026-08-23T11:30:02",
+    "duration_s": 15,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[REVERTED] 8717774820230: lost buybox - restored to safe price 79.59",
+      "[DONE] Kept higher price: 0 | Reverted to safe price: 1",
+      "[LET OP] Draai de komende ~90 minuten GEEN sync_buybox.py."
+    ]
   }
 ]
