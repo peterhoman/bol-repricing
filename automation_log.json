@@ -463,5 +463,16 @@
       "[DONE] Kept higher price: 0 | Reverted to safe price: 2",
       "[LET OP] Draai de komende ~90 minuten GEEN sync_buybox.py."
     ]
+  },
+  {
+    "task": "sync",
+    "started": "2026-08-24T13:30:02",
+    "duration_s": 490,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[DONE] Frozen total now: 176 (+0 new, -1 unfrozen)",
+      "[DONE] Big-gap total now: 0 (+0 new, -0 cleared)"
+    ]
   }
 ]
