@@ -450,5 +450,18 @@
       "[PROBE] 8716522051377: 119.24 -> 128.65 (price 294.18 -> 316.76)",
       "[PROBE] 8716522086256: 119.24 -> 128.65 (price 294.18 -> 316.76)"
     ]
+  },
+  {
+    "task": "probe_check",
+    "started": "2026-08-24T11:30:02",
+    "duration_s": 18,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[REVERTED] 8716522051377: lost buybox - restored to safe price 119.24",
+      "[REVERTED] 8716522086256: lost buybox - restored to safe price 119.24",
+      "[DONE] Kept higher price: 0 | Reverted to safe price: 2",
+      "[LET OP] Draai de komende ~90 minuten GEEN sync_buybox.py."
+    ]
   }
 ]
