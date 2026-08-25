@@ -500,5 +500,15 @@
     "summary": [
       "[DONE] Geen kandidaten voor een ronde"
     ]
+  },
+  {
+    "task": "probe_check",
+    "started": "2026-08-25T11:30:02",
+    "duration_s": 1,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[DONE] No probes currently in progress"
+    ]
   }
 ]
