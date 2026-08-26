@@ -557,5 +557,16 @@
     "summary": [
       "[DONE] No probes currently in progress"
     ]
+  },
+  {
+    "task": "sync",
+    "started": "2026-08-26T13:30:02",
+    "duration_s": 437,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[DONE] Frozen total now: 177 (+1 new, -2 unfrozen)",
+      "[DONE] Big-gap total now: 0 (+0 new, -0 cleared)"
+    ]
   }
 ]
