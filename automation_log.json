@@ -568,5 +568,21 @@
       "[DONE] Frozen total now: 177 (+1 new, -2 unfrozen)",
       "[DONE] Big-gap total now: 0 (+0 new, -0 cleared)"
     ]
+  },
+  {
+    "task": "morning",
+    "started": "2026-08-27T08:15:01",
+    "duration_s": 235,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[CSV] upload van vandaag (05:17 UTC) - verse lijst",
+      "[MATCH] Checking 170 active EAN(s) for immediate price-matching...",
+      "[MATCH] Matched (undercut competitor): 170",
+      "[MATCH] Already winning (frozen now): 0",
+      "[MATCH] Hit minimum price floor: 129",
+      "[MATCH] Check failed: 11",
+      "[MATCH] No competitor (no active seller, exempt from daily reset): 10"
+    ]
   }
 ]
