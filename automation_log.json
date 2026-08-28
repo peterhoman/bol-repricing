@@ -631,5 +631,15 @@
       "[MATCH] Check failed: 12",
       "[MATCH] No competitor (no active seller, exempt from daily reset): 11"
     ]
+  },
+  {
+    "task": "probe_start",
+    "started": "2026-08-28T10:00:02",
+    "duration_s": 5,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[DONE] Geen kandidaten voor een ronde"
+    ]
   }
 ]
