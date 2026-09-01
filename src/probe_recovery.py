@@ -62,6 +62,12 @@ MIN_GAIN = 10.0
 # ronde dezelfde verliezers. Niet optioneel.
 COOLDOWN_DAYS = 14
 DEFAULT_BATCH = 15
+# Hoeveel we onder de goedkoopste concurrent gaan zitten. AANNAME, niet
+# bewezen: BE gebruikt 2 cent maar heeft nooit getest of dat nodig is - een
+# gelijke prijs of zelfs iets erboven kan ook winnen (beoordeling/levertijd).
+# Als het koopblok bij deze marge blijft, is verlagen naar 0.01 of 0.00 het
+# proberen waard; dat is dan wel meetbaar in plaats van gegokt.
+UNDERCUT = 0.02
 
 
 def github_headers():
@@ -197,6 +203,98 @@ def phase_auto(limit):
         return
     print()
     phase_start([k["ean"] for k in kandidaten])
+
+
+MAX_STAP = 5.0   # nooit in een keer naar de volle prijs: zie phase_optimize
+
+
+def phase_optimize(limit):
+    """
+    Margeherstel op basis van de ECHTE concurrentprijzen, niet op gokwerk.
+
+    Vervangt de probe. Die zette de prijs op vol, wachtte 90 minuten en keek
+    of het koopblok het overleefde - in augustus werkte dat (15/15, 11/13),
+    daarna faalde het volledig (0/15 op 24/8, 0/13 op 31/8). De verklaring:
+    de concurrenten waren terug, en springen naar de volle prijs is bijna
+    altijd te ver. Het echte plafond ligt een paar euro hoger dan onze prijs,
+    niet dertig.
+
+    Sinds 1 september kunnen we per artikel alle verkopers en prijzen uitlezen
+    (engine.check_all_offers), ook als wij het koopblok hebben. Dan hoeft er
+    niets meer geprobeerd, gewacht of teruggezet te worden.
+
+    Regels per bevroren artikel:
+      geen andere verkoper        -> stap omhoog van maximaal MAX_STAP
+      goedkoopste ander BOVEN ons -> naar net eronder (UNDERCUT), zelfde plafond
+      goedkoopste ander ONDER ons -> niets doen
+
+    Dat laatste is niet vanzelfsprekend maar wel juist: duurder zijn dan een
+    concurrent en toch het koopblok houden komt voor (verkopersbeoordeling,
+    levertijd). Verlagen zou marge weggeven voor iets wat we al hebben.
+
+    Altijd geklemd op [bodemprijs, volle prijs]. En nooit in een keer naar de
+    volle prijs bij "geen concurrent": een pagina die verkeerd geparsed is ziet
+    er precies zo uit, en MAX_STAP per ronde komt binnen een paar dagen op
+    hetzelfde punt uit met veel minder risico.
+    """
+    engine = RepricingEngine(CSV_URL)
+    frozen = engine.load_frozen_eans()
+    feed = engine.bliving_klantprijzen
+    eans = [e for e in frozen if e in feed][:limit]
+
+    print(f"\n[OPTIMIZE] {len(eans)} bevroren artikel(en) nakijken op echte concurrentprijzen...")
+    session = requests.Session()
+    verhoogd, met_rust, geen_concurrent, mislukt = {}, 0, 0, 0
+    regels = []
+
+    for i, ean in enumerate(eans):
+        res = engine.check_all_offers(ean, session)
+        if not res.get("found"):
+            mislukt += 1
+            continue
+        onze = engine.calculate_normal_price(frozen[ean])
+        bodem = engine.calculate_minimum_price(feed[ean])
+        vol = engine.calculate_normal_price(feed[ean])
+        anderen = res["others"]
+
+        if not anderen:
+            geen_concurrent += 1
+            doel = min(onze + MAX_STAP, vol)
+            reden = "geen concurrent"
+        else:
+            laagste, naam = anderen[0]
+            if laagste <= onze:
+                met_rust += 1
+                continue
+            doel = min(laagste - UNDERCUT, onze + MAX_STAP, vol)
+            reden = f"onder {naam[:24]} (EUR{laagste:.2f})"
+
+        doel = max(doel, bodem)
+        if doel <= onze + 0.02:
+            met_rust += 1
+            continue
+        verhoogd[ean] = engine.calculate_klantprijs_for_target_price(doel)
+        regels.append((ean, onze, doel, round(doel - onze, 2), reden))
+        if (i + 1) % 20 == 0:
+            print(f"   {i+1}/{len(eans)} bekeken...")
+
+    print(f"\n{'EAN':<15}{'nu':>9}{'wordt':>9}{'erbij':>8}  reden")
+    for ean, nu, doel, plus, reden in sorted(regels, key=lambda r: -r[3]):
+        print(f"{ean:<15}{nu:>9.2f}{doel:>9.2f}{plus:>8.2f}  {reden}")
+
+    print(f"\n[OPTIMIZE] verhoogd: {len(verhoogd)} | met rust gelaten: {met_rust} "
+          f"| geen concurrent: {geen_concurrent} | mislukt: {mislukt}")
+    print(f"[OPTIMIZE] opbrengst: EUR {sum(r[3] for r in regels):.2f} per verkoopcyclus")
+
+    if not verhoogd:
+        print("[DONE] Niets te wijzigen")
+        return
+
+    frozen.update(verhoogd)
+    upload_json(frozen, "frozen.json",
+                f"Optimize: {len(verhoogd)} bevroren prijs(en) omhoog o.b.v. echte concurrentprijzen")
+    trigger_workflow()
+    print("[DONE] frozen.json bijgewerkt en feed getriggerd")
 
 
 def phase_start(eans):
@@ -363,6 +461,8 @@ if __name__ == "__main__":
         phase_check()
     elif command == "candidates":
         phase_candidates(int(sys.argv[2]) if len(sys.argv) > 2 else DEFAULT_BATCH)
+    elif command == "optimize":
+        phase_optimize(int(sys.argv[2]) if len(sys.argv) > 2 else 40)
     elif command == "auto":
         phase_auto(int(sys.argv[2]) if len(sys.argv) > 2 else DEFAULT_BATCH)
     else:
