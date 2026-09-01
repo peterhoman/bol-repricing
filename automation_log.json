@@ -1,16 +1,6 @@
 [
   {
     "task": "morning",
-    "started": "2026-08-17T16:57:16",
-    "duration_s": 10,
-    "exit_code": 1,
-    "result": "FAILED",
-    "summary": [
-      "[ERROR] No products loaded from CSV"
-    ]
-  },
-  {
-    "task": "morning",
     "started": "2026-08-18T08:35:28",
     "duration_s": 288,
     "exit_code": 0,
@@ -808,6 +798,26 @@
       "[MATCH] Hit minimum price floor: 140",
       "[MATCH] Check failed: 14",
       "[MATCH] No competitor (no active seller, exempt from daily reset): 13"
+    ]
+  },
+  {
+    "task": "probe_start",
+    "started": "2026-09-01T10:00:02",
+    "duration_s": 13,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[PROBE] 8716522103472: 174.64 -> 199.2 (price 427.14 -> 486.08)",
+      "[PROBE] 8717774825112: 79.67 -> 99.6 (price 199.21 -> 247.04)",
+      "[PROBE] 8717774825921: 70.97 -> 89.64 (price 178.33 -> 223.14)",
+      "[PROBE] 8716522062021: 132.99 -> 149.4 (price 327.18 -> 366.56)",
+      "[PROBE] 8716522091854: 83.82 -> 99.6 (price 209.17 -> 247.04)",
+      "[PROBE] 8716522062267: 106.74 -> 120.35 (price 264.18 -> 296.84)",
+      "[PROBE] 8716522070163: 115.07 -> 128.65 (price 284.17 -> 316.76)",
+      "[PROBE] 8716522103465: 100.49 -> 112.05 (price 249.18 -> 276.92)",
+      "[PROBE] 8716522103458: 67.99 -> 78.85 (price 171.18 -> 197.24)",
+      "[PROBE] 8716522103557: 67.14 -> 74.7 (price 169.14 -> 187.28)",
+      "[PROBE] 8716522090192: 45.19 -> 52.7 (price 116.46 -> 134.48)"
     ]
   }
 ]
