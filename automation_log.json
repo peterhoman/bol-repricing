@@ -1,20 +1,5 @@
 [
   {
-    "task": "morning",
-    "started": "2026-08-18T08:35:28",
-    "duration_s": 288,
-    "exit_code": 0,
-    "result": "ok",
-    "summary": [
-      "[MATCH] Checking 198 active EAN(s) for immediate price-matching...",
-      "[MATCH] Matched (undercut competitor): 198",
-      "[MATCH] Already winning (frozen now): 0",
-      "[MATCH] Hit minimum price floor: 134",
-      "[MATCH] Check failed: 9",
-      "[MATCH] No competitor (no active seller, exempt from daily reset): 8"
-    ]
-  },
-  {
     "task": "probe_start",
     "started": "2026-08-18T10:00:01",
     "duration_s": 16,
@@ -818,6 +803,27 @@
       "[PROBE] 8716522103458: 67.99 -> 78.85 (price 171.18 -> 197.24)",
       "[PROBE] 8716522103557: 67.14 -> 74.7 (price 169.14 -> 187.28)",
       "[PROBE] 8716522090192: 45.19 -> 52.7 (price 116.46 -> 134.48)"
+    ]
+  },
+  {
+    "task": "probe_check",
+    "started": "2026-09-01T11:30:02",
+    "duration_s": 24,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[KEPT] 8716522103472: still has buybox at the higher price - margin recovered!",
+      "[KEPT] 8717774825112: still has buybox at the higher price - margin recovered!",
+      "[KEPT] 8717774825921: still has buybox at the higher price - margin recovered!",
+      "[KEPT] 8716522062021: still has buybox at the higher price - margin recovered!",
+      "[KEPT] 8716522091854: still has buybox at the higher price - margin recovered!",
+      "[KEPT] 8716522062267: still has buybox at the higher price - margin recovered!",
+      "[KEPT] 8716522070163: still has buybox at the higher price - margin recovered!",
+      "[KEPT] 8716522103465: still has buybox at the higher price - margin recovered!",
+      "[KEPT] 8716522103458: still has buybox at the higher price - margin recovered!",
+      "[KEPT] 8716522103557: still has buybox at the higher price - margin recovered!",
+      "[KEPT] 8716522090192: still has buybox at the higher price - margin recovered!",
+      "[DONE] Kept higher price: 11 | Reverted to safe price: 0"
     ]
   }
 ]
