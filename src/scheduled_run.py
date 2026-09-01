@@ -43,7 +43,9 @@ MAX_ENTRIES = 60
 # itself so the schedule never has to be re-registered when a command changes.
 TASKS = {
     "morning":     ("match_prices.py", []),
-    "probe_start": ("probe_recovery.py", ["auto", "15"]),
+    # Sinds 1/9 margeherstel op ECHTE concurrentprijzen i.p.v. de probe:
+    # geen gokwerk, geen 90 minuten wachten, niets terugzetten.
+    "probe_start": ("probe_recovery.py", ["optimize", "40"]),
     "probe_check": ("probe_recovery.py", ["check"]),
     "sync":        ("sync_buybox.py", []),
 }
