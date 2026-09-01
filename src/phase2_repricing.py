@@ -791,6 +791,60 @@ class RepricingEngine:
             pass
         return {}
 
+    def check_all_offers(self, ean: str, session: requests.Session) -> dict:
+        """
+        Read EVERY seller and price for one EAN from bol.com's price-overview
+        page - also when WE hold the buybox.
+
+        For weeks both projects assumed this was impossible: the product page
+        only shows the buybox holder, so margin recovery had to be guesswork
+        (raise the price, wait 90 minutes, see if the buybox survived). That
+        assumption was wrong. Behind the "Bij N partners verkrijgbaar" link
+        sits /nl/nl/prijsoverzicht/<slug>/<id>/, plain server-rendered HTML
+        that lists all offers. Found by BE on 1 September after Peter asked
+        why we couldn't just click through in his browser.
+
+        Parsing note: read price and seller with SEPARATE patterns. On a
+        discounted offer there is text between them ("De adviesprijs is ...
+        Je bespaart 3%."), which breaks a single combined pattern. The
+        screen-reader sentence is used because it is far more stable than the
+        visual price markup.
+
+        Returns {'found': bool, 'offers': [(price, seller), ...] sorted by
+        price, 'others': same without our own listing}.
+        """
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        try:
+            search = session.get(f"https://www.bol.com/nl/nl/s/?searchtext={ean}",
+                                 headers=headers, timeout=15)
+            urls = re.findall(r'"(/nl/nl/p/[^"]+)"', search.text)
+            if not urls:
+                return {"found": False, "error": "no product url in search results"}
+            m = re.search(r"/p/([^/]+)/(\d+)", urls[0])
+            if not m:
+                return {"found": False, "error": "no slug/id in product url"}
+            page = session.get(
+                f"https://www.bol.com/nl/nl/prijsoverzicht/{m.group(1)}/{m.group(2)}/"
+                f"?sort=price&sortOrder=asc", headers=headers, timeout=15)
+            if page.status_code != 200:
+                return {"found": False, "error": f"overview status {page.status_code}"}
+
+            offers = []
+            for seg in page.text.split('data-testid="offer-compare-item"')[1:]:
+                pm = re.search(r"De prijs van dit product is (\d+) euro(?: en (\d+) cent)?", seg)
+                if not pm:
+                    continue
+                vm = re.search(r"Verkocht door ([^.<|]{2,60})", seg)
+                offers.append((int(pm.group(1)) + int(pm.group(2) or 0) / 100,
+                               (vm.group(1).strip() if vm else "?")))
+            if not offers:
+                return {"found": False, "error": "no offers parsed"}
+            offers.sort()
+            others = [o for o in offers if not o[1].lower().startswith("tiptopshop")]
+            return {"found": True, "offers": offers, "others": others}
+        except Exception as exc:
+            return {"found": False, "error": f"{type(exc).__name__}: {exc}"}
+
     def check_buybox(self, ean: str, session: requests.Session, seller_name: str = "Tiptopshop") -> dict:
         """
         Check the LIVE buybox status for one EAN by reading Bol.com's own
