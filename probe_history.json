@@ -1,17 +1,72 @@
 {
-  "8716522103472": "2026-08-17",
-  "8717774825112": "2026-08-17",
+  "8716522103472": {
+    "datum": "2026-09-01",
+    "uitkomst": "behouden",
+    "winst": 58.94,
+    "titel": "Champagne Koeler hert hout zilver 29x53x37cm"
+  },
+  "8717774825112": {
+    "datum": "2026-09-01",
+    "uitkomst": "behouden",
+    "winst": 47.83,
+    "titel": "Vliegengordijn Palermo Transparant 100x232 cm"
+  },
   "8716522092028": "2026-08-17",
-  "8717774825921": "2026-08-17",
+  "8717774825921": {
+    "datum": "2026-09-01",
+    "uitkomst": "behouden",
+    "winst": 44.81,
+    "titel": "Vliegengordijn Roma Transparant - zwart 100x232 cm"
+  },
   "8717774821015": "2026-08-17",
-  "8716522062021": "2026-08-17",
-  "8716522091854": "2026-08-17",
-  "8716522070163": "2026-08-17",
-  "8716522090192": "2026-08-17",
-  "8716522062267": "2026-08-17",
-  "8716522103557": "2026-08-17",
-  "8716522103458": "2026-08-17",
-  "8716522103465": "2026-08-17",
+  "8716522062021": {
+    "datum": "2026-09-01",
+    "uitkomst": "behouden",
+    "winst": 39.38,
+    "titel": "wijnkoeler op standaard hert 77cm"
+  },
+  "8716522091854": {
+    "datum": "2026-09-01",
+    "uitkomst": "behouden",
+    "winst": 37.87,
+    "titel": "wijnkoeler op poot champagne goud 31X12X10cm"
+  },
+  "8716522070163": {
+    "datum": "2026-09-01",
+    "uitkomst": "behouden",
+    "winst": 32.59,
+    "titel": "wanddecoratie steenbok 63cm*"
+  },
+  "8716522090192": {
+    "datum": "2026-09-01",
+    "uitkomst": "behouden",
+    "winst": 18.02,
+    "titel": "poef teddy glad gebroken wit dia 40cm"
+  },
+  "8716522062267": {
+    "datum": "2026-09-01",
+    "uitkomst": "behouden",
+    "winst": 32.66,
+    "titel": "muurornament stier 64cm"
+  },
+  "8716522103557": {
+    "datum": "2026-09-01",
+    "uitkomst": "behouden",
+    "winst": 18.14,
+    "titel": "Paraplu Standaard leer zilver h45cm"
+  },
+  "8716522103458": {
+    "datum": "2026-09-01",
+    "uitkomst": "behouden",
+    "winst": 26.06,
+    "titel": "Champagne Koeler hert hout zilver 18x45x29cm"
+  },
+  "8716522103465": {
+    "datum": "2026-09-01",
+    "uitkomst": "behouden",
+    "winst": 27.74,
+    "titel": "Champagne Koeler hert hout zilver 22x51x34cm"
+  },
   "8717774825792": "2026-08-17",
   "8717774825877": "2026-08-17",
   "8717774820681": {
