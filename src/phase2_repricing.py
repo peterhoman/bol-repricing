@@ -791,6 +791,40 @@ class RepricingEngine:
             pass
         return {}
 
+    _MAANDEN = {m: i for i, m in enumerate(
+        "januari februari maart april mei juni juli augustus september "
+        "oktober november december".split(), 1)}
+
+    @classmethod
+    def _levertijd_dagen(cls, tekst):
+        """
+        "Uiterlijk 9 september in huis" / "Morgen in huis" -> aantal dagen
+        vanaf vandaag. Geeft None als er niets te lezen valt.
+
+        Waarom levertijd meetellen: uit de meting van 2 september blijkt dit
+        de sterkste voorspeller of een prijsverhoging het koopblok overleeft.
+        Tegen een TRAGERE concurrent hielden we het 3 van 3; tegen een even
+        snelle of snellere 12-20%. Ons prijsverschil compenseert daar het
+        levertijdnadeel (wij 3-5 werkdagen tegen concurrenten die morgen
+        leveren), dus dat verschil weghalen kost het koopblok.
+        """
+        if not tekst:
+            return None
+        from datetime import datetime as _dt
+        if "morgen" in tekst.lower():
+            return 1
+        m = re.match(r"(\d{1,2})\s+(\w+)", tekst)
+        if not m or m.group(2).lower() not in cls._MAANDEN:
+            return None
+        try:
+            nu = _dt.now()
+            doel = _dt(nu.year, cls._MAANDEN[m.group(2).lower()], int(m.group(1)))
+            if (doel - nu).days < -180:      # jaarwisseling
+                doel = doel.replace(year=nu.year + 1)
+            return (doel - nu).days + 1
+        except ValueError:
+            return None
+
     def check_all_offers(self, ean: str, session: requests.Session) -> dict:
         """
         Read EVERY seller and price for one EAN from bol.com's price-overview
@@ -835,13 +869,18 @@ class RepricingEngine:
                 if not pm:
                     continue
                 vm = re.search(r"Verkocht door ([^.<|]{2,60})", seg)
+                lv = (re.search(r"[Uu]iterlijk\s+(\d{1,2}\s+\w+)\s+in huis", seg)
+                      or re.search(r"([Mm]orgen)\s+in huis", seg))
                 offers.append((int(pm.group(1)) + int(pm.group(2) or 0) / 100,
-                               (vm.group(1).strip() if vm else "?")))
+                               (vm.group(1).strip() if vm else "?"),
+                               self._levertijd_dagen(lv.group(1) if lv else None)))
             if not offers:
                 return {"found": False, "error": "no offers parsed"}
             offers.sort()
             others = [o for o in offers if not o[1].lower().startswith("tiptopshop")]
-            return {"found": True, "offers": offers, "others": others}
+            ours = [o for o in offers if o[1].lower().startswith("tiptopshop")]
+            return {"found": True, "offers": offers, "others": others,
+                    "our_delivery": (ours[0][2] if ours else None)}
         except Exception as exc:
             return {"found": False, "error": f"{type(exc).__name__}: {exc}"}
 
