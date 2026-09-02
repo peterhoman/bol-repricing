@@ -244,7 +244,7 @@ def phase_optimize(limit):
 
     print(f"\n[OPTIMIZE] {len(eans)} bevroren artikel(en) nakijken op echte concurrentprijzen...")
     session = requests.Session()
-    verhoogd, met_rust, geen_concurrent, mislukt = {}, 0, 0, 0
+    verhoogd, met_rust, geen_concurrent, mislukt, niet_sneller = {}, 0, 0, 0, 0
     regels = []
 
     for i, ean in enumerate(eans):
@@ -262,12 +262,26 @@ def phase_optimize(limit):
             doel = min(onze + MAX_STAP, vol)
             reden = "geen concurrent"
         else:
-            laagste, naam = anderen[0]
+            laagste, naam, conc_lev = anderen[0]
+            onze_lev = res.get("our_delivery")
             if laagste <= onze:
                 met_rust += 1
                 continue
+            # Alleen verhogen tegen een AANTOONBAAR TRAGERE concurrent.
+            # Meting 2 september over 123 artikelen: tot net onder de
+            # concurrent gaan hield 3 van 3 bij een tragere, maar slechts
+            # 20% bij een even snelle en 12% bij een snellere. Ons
+            # prijsverschil compenseert daar het levertijdnadeel (wij 3-5
+            # werkdagen tegen concurrenten die morgen leveren); haal je dat
+            # weg, dan wint hun snellere levering. "Gelijk" is bovendien de
+            # grootste groep (30 van 59), dus die met "trager" samenvoegen
+            # zou de kleinste groep de regel laten bepalen - punt van de
+            # BE-chat, en terecht.
+            if conc_lev is None or onze_lev is None or conc_lev <= onze_lev:
+                niet_sneller += 1
+                continue
             doel = min(laagste - UNDERCUT, onze + MAX_STAP, vol)
-            reden = f"onder {naam[:24]} (EUR{laagste:.2f})"
+            reden = f"onder {naam[:22]} (EUR{laagste:.2f}, levert {conc_lev - onze_lev}d later)"
 
         doel = max(doel, bodem)
         if doel <= onze + 0.02:
@@ -283,7 +297,8 @@ def phase_optimize(limit):
         print(f"{ean:<15}{nu:>9.2f}{doel:>9.2f}{plus:>8.2f}  {reden}")
 
     print(f"\n[OPTIMIZE] verhoogd: {len(verhoogd)} | met rust gelaten: {met_rust} "
-          f"| geen concurrent: {geen_concurrent} | mislukt: {mislukt}")
+          f"| geen concurrent: {geen_concurrent} "
+          f"| concurrent niet trager (overgeslagen): {niet_sneller} | mislukt: {mislukt}")
     print(f"[OPTIMIZE] opbrengst: EUR {sum(r[3] for r in regels):.2f} per verkoopcyclus")
 
     if not verhoogd:
