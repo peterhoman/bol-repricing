@@ -168,7 +168,7 @@ def run(task_name):
                    if ln.strip().startswith(("[MATCH]", "[DONE]", "[PROBE]", "[KEPT]",
                                              "[REVERTED]", "[AUTO]", "[ERROR]", "[STOP]",
                                              "[GEWEIGERD]", "[LET OP]", "[AUDIT]",
-                                             "[FLOOR]", "[WARN]", "[CSV]", "TIMEOUT", "CRASH"))]
+                                             "[FLOOR]", "[WARN]", "[CSV]", "[OPTIMIZE]", "TIMEOUT", "CRASH"))]
 
     entry = {
         "task": task_name,
