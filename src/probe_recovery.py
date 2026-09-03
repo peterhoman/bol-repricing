@@ -225,7 +225,10 @@ def phase_optimize(limit):
 
     Regels per bevroren artikel:
       geen andere verkoper        -> stap omhoog van maximaal MAX_STAP
-      goedkoopste ander BOVEN ons -> naar net eronder (UNDERCUT), zelfde plafond
+      goedkoopste ander BOVEN ons -> alleen als die aantoonbaar TRAGER levert:
+                                     naar net eronder (UNDERCUT), zelfde plafond.
+                                     Even snel, sneller of levertijd onleesbaar
+                                     -> niets doen (zie de toelichting in de lus)
       goedkoopste ander ONDER ons -> niets doen
 
     Dat laatste is niet vanzelfsprekend maar wel juist: duurder zijn dan een
@@ -244,7 +247,17 @@ def phase_optimize(limit):
 
     print(f"\n[OPTIMIZE] {len(eans)} bevroren artikel(en) nakijken op echte concurrentprijzen...")
     session = requests.Session()
-    verhoogd, met_rust, geen_concurrent, mislukt, niet_sneller = {}, 0, 0, 0, 0
+    verhoogd, met_rust, geen_concurrent, mislukt = {}, 0, 0, 0
+    # Overgeslagen omdat de concurrent niet aantoonbaar trager is, in DRIE
+    # groepen. Die vragen elk een andere conclusie: "sneller" en "even snel"
+    # zijn terecht overgeslagen (12% en 20% behoud op 1 sept), maar bij
+    # "levertijd onleesbaar" weten we het simpelweg niet - bol.com toont daar
+    # een bereik als "1 - 2 weken" dat _levertijd_dagen niet leest. Tegenover
+    # onze 3-5 werkdagen is zo'n concurrent eerder trager dan gelijk. Zolang
+    # de drie op een hoop lagen (teller `niet_sneller`, t/m 2 sept) was niet
+    # te zien of we terecht voorzichtig waren of onnodig geld lieten liggen.
+    lev_onleesbaar, lev_gelijk, lev_sneller = 0, 0, 0
+    overgeslagen = []
     regels = []
 
     for i, ean in enumerate(eans):
@@ -277,8 +290,17 @@ def phase_optimize(limit):
             # grootste groep (30 van 59), dus die met "trager" samenvoegen
             # zou de kleinste groep de regel laten bepalen - punt van de
             # BE-chat, en terecht.
-            if conc_lev is None or onze_lev is None or conc_lev <= onze_lev:
-                niet_sneller += 1
+            if conc_lev is None or onze_lev is None:
+                lev_onleesbaar += 1
+                overgeslagen.append((ean, onze, laagste, naam, onze_lev, conc_lev, "levertijd onleesbaar"))
+                continue
+            if conc_lev == onze_lev:
+                lev_gelijk += 1
+                overgeslagen.append((ean, onze, laagste, naam, onze_lev, conc_lev, "even snel"))
+                continue
+            if conc_lev < onze_lev:
+                lev_sneller += 1
+                overgeslagen.append((ean, onze, laagste, naam, onze_lev, conc_lev, "sneller"))
                 continue
             doel = min(laagste - UNDERCUT, onze + MAX_STAP, vol)
             reden = f"onder {naam[:22]} (EUR{laagste:.2f}, levert {conc_lev - onze_lev}d later)"
@@ -296,9 +318,21 @@ def phase_optimize(limit):
     for ean, nu, doel, plus, reden in sorted(regels, key=lambda r: -r[3]):
         print(f"{ean:<15}{nu:>9.2f}{doel:>9.2f}{plus:>8.2f}  {reden}")
 
+    # Alleen in het lokale log (geen [..]-prefix): per overgeslagen artikel
+    # de levertijden, zodat de verdeling van de teller hieronder na te lopen is.
+    if overgeslagen:
+        print()
+        print(f"{'EAN':<15}{'onze':>9}{'conc.':>9}  {'wij':>4} {'zij':>4}  reden / verkoper")
+        for ean, nu, conc, naam, wl, cl, reden in overgeslagen:
+            wl_s = "?" if wl is None else str(wl)
+            cl_s = "?" if cl is None else str(cl)
+            print(f"{ean:<15}{nu:>9.2f}{conc:>9.2f}  {wl_s:>4} {cl_s:>4}  {reden} / {naam[:22]}")
+
     print(f"\n[OPTIMIZE] verhoogd: {len(verhoogd)} | met rust gelaten: {met_rust} "
           f"| geen concurrent: {geen_concurrent} "
-          f"| concurrent niet trager (overgeslagen): {niet_sneller} | mislukt: {mislukt}")
+          f"| overgeslagen (concurrent niet aantoonbaar trager): {len(overgeslagen)} "
+          f"= levertijd onleesbaar {lev_onleesbaar} + even snel {lev_gelijk} + sneller {lev_sneller} "
+          f"| mislukt: {mislukt}")
     print(f"[OPTIMIZE] opbrengst: EUR {sum(r[3] for r in regels):.2f} per verkoopcyclus")
 
     if not verhoogd:
