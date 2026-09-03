@@ -45,7 +45,10 @@ TASKS = {
     "morning":     ("match_prices.py", []),
     # Sinds 1/9 margeherstel op ECHTE concurrentprijzen i.p.v. de probe:
     # geen gokwerk, geen 90 minuten wachten, niets terugzetten.
-    "probe_start": ("probe_recovery.py", ["optimize", "40"]),
+    # Limiet 200 sinds 3/9 (was 40): optimize pakt de EERSTE n uit frozen.json,
+    # ongesorteerd, dus met 40 werden elke dag dezelfde 40 van ~160 bekeken en
+    # de rest nooit. 200 = alles. Duurt ~2,5 min in plaats van ~1.
+    "probe_start": ("probe_recovery.py", ["optimize", "200"]),
     "probe_check": ("probe_recovery.py", ["check"]),
     "sync":        ("sync_buybox.py", []),
 }
