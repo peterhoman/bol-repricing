@@ -1,15 +1,5 @@
 [
   {
-    "task": "selftest",
-    "started": "2026-08-21T07:55:08",
-    "duration_s": 0,
-    "exit_code": 0,
-    "result": "ok",
-    "summary": [
-      "selftest - scheduler reached the script"
-    ]
-  },
-  {
     "task": "morning",
     "started": "2026-08-21T08:15:00",
     "duration_s": 253,
@@ -748,6 +738,16 @@
       "[OPTIMIZE] verhoogd: 9 | met rust gelaten: 47 | geen concurrent: 28 | overgeslagen (concurrent niet aantoonbaar trager): 115 = levertijd onleesbaar 3 + even snel 76 + sneller 36 | mislukt: 5",
       "[OPTIMIZE] opbrengst: EUR 28.17 per verkoopcyclus",
       "[DONE] frozen.json bijgewerkt en feed getriggerd"
+    ]
+  },
+  {
+    "task": "probe_check",
+    "started": "2026-09-04T11:30:02",
+    "duration_s": 1,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[DONE] No probes currently in progress"
     ]
   }
 ]
