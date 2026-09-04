@@ -1,31 +1,5 @@
 [
   {
-    "task": "probe_check",
-    "started": "2026-08-20T11:30:02",
-    "duration_s": 34,
-    "exit_code": 0,
-    "result": "ok",
-    "summary": [
-      "[REVERTED] 8717266396977: lost buybox - restored to safe price 27.84",
-      "[KEPT] 8716522110005: still has buybox at the higher price - margin recovered!",
-      "[KEPT] 8716522106633: still has buybox at the higher price - margin recovered!",
-      "[REVERTED] 8716522092011: lost buybox - restored to safe price 23.66",
-      "[REVERTED] 8716522106770: lost buybox - restored to safe price 35.69",
-      "[REVERTED] 8716522089974: lost buybox - restored to safe price 23.0",
-      "[REVERTED] 8716522020038: lost buybox - restored to safe price 22.67",
-      "[KEPT] 8716522085068: still has buybox at the higher price - margin recovered!",
-      "[REVERTED] 8716522100945: lost buybox - restored to safe price 22.34",
-      "[REVERTED] 8716522092035: lost buybox - restored to safe price 21.69",
-      "[REVERTED] 8716522090345: lost buybox - restored to safe price 20.04",
-      "[REVERTED] 8716522110395: lost buybox - restored to safe price 19.55",
-      "[REVERTED] 8716522092004: lost buybox - restored to safe price 19.55",
-      "[REVERTED] 8716522080452: lost buybox - restored to safe price 19.06",
-      "[REVERTED] 8716522082401: lost buybox - restored to safe price 18.8",
-      "[DONE] Kept higher price: 3 | Reverted to safe price: 12",
-      "[LET OP] Draai de komende ~90 minuten GEEN sync_buybox.py."
-    ]
-  },
-  {
     "task": "sync",
     "started": "2026-08-20T13:30:02",
     "duration_s": 494,
@@ -756,6 +730,22 @@
     "summary": [
       "[DONE] Frozen total now: 178 (+4 new, -1 unfrozen)",
       "[DONE] Big-gap total now: 0 (+0 new, -0 cleared)"
+    ]
+  },
+  {
+    "task": "morning",
+    "started": "2026-09-04T08:15:01",
+    "duration_s": 219,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[CSV] upload van vandaag (05:42 UTC) - verse lijst",
+      "[MATCH] Checking 169 active EAN(s) for immediate price-matching...",
+      "[MATCH] Matched (undercut competitor): 168",
+      "[MATCH] Already winning (frozen now): 1",
+      "[MATCH] Hit minimum price floor: 130",
+      "[MATCH] Check failed: 9",
+      "[MATCH] No competitor (no active seller, exempt from daily reset): 8"
     ]
   }
 ]
