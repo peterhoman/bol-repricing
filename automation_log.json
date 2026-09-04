@@ -1,20 +1,5 @@
 [
   {
-    "task": "morning",
-    "started": "2026-08-21T08:15:00",
-    "duration_s": 253,
-    "exit_code": 0,
-    "result": "ok",
-    "summary": [
-      "[MATCH] Checking 181 active EAN(s) for immediate price-matching...",
-      "[MATCH] Matched (undercut competitor): 173",
-      "[MATCH] Already winning (frozen now): 8",
-      "[MATCH] Hit minimum price floor: 130",
-      "[MATCH] Check failed: 9",
-      "[MATCH] No competitor (no active seller, exempt from daily reset): 8"
-    ]
-  },
-  {
     "task": "probe_start",
     "started": "2026-08-21T10:00:00",
     "duration_s": 16,
@@ -748,6 +733,17 @@
     "result": "ok",
     "summary": [
       "[DONE] No probes currently in progress"
+    ]
+  },
+  {
+    "task": "sync",
+    "started": "2026-09-04T13:30:01",
+    "duration_s": 458,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[DONE] Frozen total now: 166 (+1 new, -3 unfrozen)",
+      "[DONE] Big-gap total now: 0 (+0 new, -0 cleared)"
     ]
   }
 ]
