@@ -1,20 +1,5 @@
 [
   {
-    "task": "probe_check",
-    "started": "2026-08-21T11:30:00",
-    "duration_s": 20,
-    "exit_code": 0,
-    "result": "ok",
-    "summary": [
-      "[REVERTED] 8716522071818: lost buybox - restored to safe price 24.02",
-      "[KEPT] 8717266385179: still has buybox at the higher price - margin recovered!",
-      "[KEPT] 8717266342066: still has buybox at the higher price - margin recovered!",
-      "[REVERTED] 8717266342011: lost buybox - restored to safe price 17.41",
-      "[DONE] Kept higher price: 2 | Reverted to safe price: 2",
-      "[LET OP] Draai de komende ~90 minuten GEEN sync_buybox.py."
-    ]
-  },
-  {
     "task": "sync",
     "started": "2026-08-21T13:30:00",
     "duration_s": 458,
@@ -747,6 +732,19 @@
       "[MATCH] Hit minimum price floor: 138",
       "[MATCH] Check failed: 11",
       "[MATCH] No competitor (no active seller, exempt from daily reset): 9"
+    ]
+  },
+  {
+    "task": "probe_start",
+    "started": "2026-09-05T10:00:02",
+    "duration_s": 123,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[OPTIMIZE] 176 bevroren artikel(en) nakijken op echte concurrentprijzen...",
+      "[OPTIMIZE] verhoogd: 6 | met rust gelaten: 45 | geen concurrent: 27 | overgeslagen (concurrent niet aantoonbaar trager): 120 = levertijd onleesbaar 5 + even snel 79 + sneller 36 | mislukt: 5",
+      "[OPTIMIZE] opbrengst: EUR 22.94 per verkoopcyclus",
+      "[DONE] frozen.json bijgewerkt en feed getriggerd"
     ]
   }
 ]
