@@ -1,86 +1,177 @@
 {
-  "gestart": "2026-09-04T19:19:41",
-  "stap": 1.0,
-  "artikelen": {
-    "8716522088045": {
-      "ean": "8716522088045",
-      "oud_kp": 34.94,
-      "oud_prijs": 91.86,
-      "doel": 92.86,
-      "nieuw_kp": 35.36,
-      "concurrent": "toonies-woondeco",
-      "conc_prijs": 107.6,
-      "ruimte": 15.74,
-      "levertijd": [
-        7,
-        7
-      ],
-      "vol": 113.58,
-      "bodem": 91.58
+  "groepen": {
+    "G1": {
+      "gestart": "2026-09-04T19:19:41",
+      "stap": 1.0,
+      "artikelen": {
+        "8716522088045": {
+          "ean": "8716522088045",
+          "oud_kp": 34.94,
+          "oud_prijs": 91.86,
+          "doel": 92.86,
+          "nieuw_kp": 35.36,
+          "concurrent": "toonies-woondeco",
+          "conc_prijs": 107.6,
+          "ruimte": 15.74,
+          "levertijd": [
+            7,
+            7
+          ],
+          "vol": 113.58,
+          "bodem": 91.58
+        },
+        "8717266392474": {
+          "ean": "8717266392474",
+          "oud_kp": 30.72,
+          "oud_prijs": 81.73,
+          "doel": 82.73,
+          "nieuw_kp": 31.14,
+          "concurrent": "toonies-woondeco",
+          "conc_prijs": 95.65,
+          "ruimte": 13.92,
+          "levertijd": [
+            7,
+            7
+          ],
+          "vol": 101.12,
+          "bodem": 81.72
+        },
+        "8716522103472": {
+          "ean": "8716522103472",
+          "oud_kp": 172.04,
+          "oud_prijs": 420.9,
+          "doel": 421.9,
+          "nieuw_kp": 172.46,
+          "concurrent": "Bohemian Living NL",
+          "conc_prijs": 432.95,
+          "ruimte": 12.05,
+          "levertijd": [
+            7,
+            7
+          ],
+          "vol": 486.08,
+          "bodem": 386.48
+        },
+        "8716522070163": {
+          "ean": "8716522070163",
+          "oud_kp": 112.47,
+          "oud_prijs": 277.93,
+          "doel": 278.93,
+          "nieuw_kp": 112.89,
+          "concurrent": "Bohemian Living NL",
+          "conc_prijs": 289.95,
+          "ruimte": 12.02,
+          "levertijd": [
+            7,
+            7
+          ],
+          "vol": 316.76,
+          "bodem": 252.44
+        },
+        "8716522110395": {
+          "ean": "8716522110395",
+          "oud_kp": 19.55,
+          "oud_prijs": 54.92,
+          "doel": 55.92,
+          "nieuw_kp": 19.97,
+          "concurrent": "Woonuden-DierenlampenOnline",
+          "conc_prijs": 65.95,
+          "ruimte": 11.03,
+          "levertijd": [
+            7,
+            7
+          ],
+          "vol": 67.26,
+          "bodem": 54.91
+        }
+      }
     },
-    "8717266392474": {
-      "ean": "8717266392474",
-      "oud_kp": 30.72,
-      "oud_prijs": 81.73,
-      "doel": 82.73,
-      "nieuw_kp": 31.14,
-      "concurrent": "toonies-woondeco",
-      "conc_prijs": 95.65,
-      "ruimte": 13.92,
-      "levertijd": [
-        7,
-        7
-      ],
-      "vol": 101.12,
-      "bodem": 81.72
-    },
-    "8716522103472": {
-      "ean": "8716522103472",
-      "oud_kp": 172.04,
-      "oud_prijs": 420.9,
-      "doel": 421.9,
-      "nieuw_kp": 172.46,
-      "concurrent": "Bohemian Living NL",
-      "conc_prijs": 432.95,
-      "ruimte": 12.05,
-      "levertijd": [
-        7,
-        7
-      ],
-      "vol": 486.08,
-      "bodem": 386.48
-    },
-    "8716522070163": {
-      "ean": "8716522070163",
-      "oud_kp": 112.47,
-      "oud_prijs": 277.93,
-      "doel": 278.93,
-      "nieuw_kp": 112.89,
-      "concurrent": "Bohemian Living NL",
-      "conc_prijs": 289.95,
-      "ruimte": 12.02,
-      "levertijd": [
-        7,
-        7
-      ],
-      "vol": 316.76,
-      "bodem": 252.44
-    },
-    "8716522110395": {
-      "ean": "8716522110395",
-      "oud_kp": 19.55,
-      "oud_prijs": 54.92,
-      "doel": 55.92,
-      "nieuw_kp": 19.97,
-      "concurrent": "Woonuden-DierenlampenOnline",
-      "conc_prijs": 65.95,
-      "ruimte": 11.03,
-      "levertijd": [
-        7,
-        7
-      ],
-      "vol": 67.26,
-      "bodem": 54.91
+    "G1b": {
+      "gestart": "2026-09-06T17:16:09",
+      "stap": 1.0,
+      "omschrijving": "groep G1 nog +EUR1.00 (terugzetpunt = prijs van G1)",
+      "artikelen": {
+        "8716522088045": {
+          "ean": "8716522088045",
+          "oud_kp": 35.36,
+          "oud_prijs": 92.86,
+          "doel": 93.86,
+          "nieuw_kp": 35.78,
+          "concurrent": "toonies-woondeco",
+          "conc_prijs": 107.6,
+          "ruimte": 14.74,
+          "levertijd": [
+            8,
+            8
+          ],
+          "vol": 113.58,
+          "bodem": 91.58
+        },
+        "8717266392474": {
+          "ean": "8717266392474",
+          "oud_kp": 31.14,
+          "oud_prijs": 82.74,
+          "doel": 83.74,
+          "nieuw_kp": 31.56,
+          "concurrent": "toonies-woondeco",
+          "conc_prijs": 95.65,
+          "ruimte": 12.91,
+          "levertijd": [
+            8,
+            8
+          ],
+          "vol": 101.12,
+          "bodem": 81.72
+        },
+        "8716522103472": {
+          "ean": "8716522103472",
+          "oud_kp": 172.46,
+          "oud_prijs": 421.9,
+          "doel": 422.9,
+          "nieuw_kp": 172.88,
+          "concurrent": "Bohemian Living NL",
+          "conc_prijs": 432.95,
+          "ruimte": 11.05,
+          "levertijd": [
+            8,
+            8
+          ],
+          "vol": 486.08,
+          "bodem": 386.48
+        },
+        "8716522070163": {
+          "ean": "8716522070163",
+          "oud_kp": 112.89,
+          "oud_prijs": 278.94,
+          "doel": 279.94,
+          "nieuw_kp": 113.31,
+          "concurrent": "Bohemian Living NL",
+          "conc_prijs": 289.95,
+          "ruimte": 11.01,
+          "levertijd": [
+            8,
+            8
+          ],
+          "vol": 316.76,
+          "bodem": 252.44
+        },
+        "8716522110395": {
+          "ean": "8716522110395",
+          "oud_kp": 19.97,
+          "oud_prijs": 55.93,
+          "doel": 56.93,
+          "nieuw_kp": 20.39,
+          "concurrent": "Woonuden-DierenlampenOnline",
+          "conc_prijs": 65.95,
+          "ruimte": 10.02,
+          "levertijd": [
+            8,
+            8
+          ],
+          "vol": 67.26,
+          "bodem": 54.91
+        }
+      }
     }
   }
 }
