@@ -172,6 +172,253 @@
           "bodem": 54.91
         }
       }
+    },
+    "G2": {
+      "gestart": "2026-09-06T17:16:29",
+      "stap": 1.0,
+      "omschrijving": "15 nieuwe artikelen +EUR1.00",
+      "artikelen": {
+        "8717266392504": {
+          "ean": "8717266392504",
+          "oud_kp": 30.72,
+          "oud_prijs": 81.73,
+          "doel": 82.73,
+          "nieuw_kp": 31.14,
+          "concurrent": "toonies-woondeco",
+          "conc_prijs": 95.65,
+          "ruimte": 13.92,
+          "levertijd": [
+            8,
+            8
+          ],
+          "vol": 101.12,
+          "bodem": 81.72
+        },
+        "8716522091854": {
+          "ean": "8716522091854",
+          "oud_kp": 81.22,
+          "oud_prijs": 202.93,
+          "doel": 203.93,
+          "nieuw_kp": 81.64,
+          "concurrent": "Bohemian Living NL",
+          "conc_prijs": 214.95,
+          "ruimte": 12.02,
+          "levertijd": [
+            8,
+            8
+          ],
+          "vol": 247.04,
+          "bodem": 197.24
+        },
+        "8716522062021": {
+          "ean": "8716522062021",
+          "oud_kp": 130.39,
+          "oud_prijs": 320.94,
+          "doel": 321.94,
+          "nieuw_kp": 130.81,
+          "concurrent": "Bohemian Living NL",
+          "conc_prijs": 332.95,
+          "ruimte": 12.01,
+          "levertijd": [
+            8,
+            8
+          ],
+          "vol": 366.56,
+          "bodem": 291.86
+        },
+        "8716522103458": {
+          "ean": "8716522103458",
+          "oud_kp": 65.39,
+          "oud_prijs": 164.94,
+          "doel": 165.94,
+          "nieuw_kp": 65.81,
+          "concurrent": "Bohemian Living NL",
+          "conc_prijs": 176.95,
+          "ruimte": 12.01,
+          "levertijd": [
+            8,
+            8
+          ],
+          "vol": 197.24,
+          "bodem": 157.81
+        },
+        "8716522100945": {
+          "ean": "8716522100945",
+          "oud_kp": 22.34,
+          "oud_prijs": 61.62,
+          "doel": 62.62,
+          "nieuw_kp": 22.76,
+          "concurrent": "toonies-woondeco",
+          "conc_prijs": 72.5,
+          "ruimte": 10.88,
+          "levertijd": [
+            8,
+            8
+          ],
+          "vol": 75.73,
+          "bodem": 61.62
+        },
+        "8716522079302": {
+          "ean": "8716522079302",
+          "oud_kp": 20.14,
+          "oud_prijs": 56.34,
+          "doel": 57.34,
+          "nieuw_kp": 20.56,
+          "concurrent": "Cactula",
+          "conc_prijs": 65.0,
+          "ruimte": 8.66,
+          "levertijd": [
+            8,
+            8
+          ],
+          "vol": 68.74,
+          "bodem": 56.09
+        },
+        "8716522014594": {
+          "ean": "8716522014594",
+          "oud_kp": 18.4,
+          "oud_prijs": 52.16,
+          "doel": 53.16,
+          "nieuw_kp": 18.82,
+          "concurrent": "Cactula",
+          "conc_prijs": 60.78,
+          "ruimte": 8.62,
+          "levertijd": [
+            8,
+            8
+          ],
+          "vol": 63.78,
+          "bodem": 52.16
+        },
+        "8716522020038": {
+          "ean": "8716522020038",
+          "oud_kp": 22.67,
+          "oud_prijs": 62.41,
+          "doel": 63.41,
+          "nieuw_kp": 23.09,
+          "concurrent": "LaSpada",
+          "conc_prijs": 69.95,
+          "ruimte": 7.54,
+          "levertijd": [
+            8,
+            8
+          ],
+          "vol": 76.71,
+          "bodem": 62.4
+        },
+        "8716522071818": {
+          "ean": "8716522071818",
+          "oud_kp": 22.67,
+          "oud_prijs": 62.41,
+          "doel": 63.41,
+          "nieuw_kp": 23.09,
+          "concurrent": "Cactula",
+          "conc_prijs": 69.0,
+          "ruimte": 6.59,
+          "levertijd": [
+            8,
+            8
+          ],
+          "vol": 76.71,
+          "bodem": 62.4
+        },
+        "8716522110388": {
+          "ean": "8716522110388",
+          "oud_kp": 9.86,
+          "oud_prijs": 31.66,
+          "doel": 32.66,
+          "nieuw_kp": 10.28,
+          "concurrent": "Woonuden-DierenlampenOnline",
+          "conc_prijs": 37.5,
+          "ruimte": 5.84,
+          "levertijd": [
+            8,
+            8
+          ],
+          "vol": 37.88,
+          "bodem": 31.65
+        },
+        "8716522094497": {
+          "ean": "8716522094497",
+          "oud_kp": 14.98,
+          "oud_prijs": 43.95,
+          "doel": 44.95,
+          "nieuw_kp": 15.4,
+          "concurrent": "toonies-woondeco",
+          "conc_prijs": 48.85,
+          "ruimte": 4.9,
+          "levertijd": [
+            8,
+            8
+          ],
+          "vol": 53.41,
+          "bodem": 43.95
+        },
+        "8716522110289": {
+          "ean": "8716522110289",
+          "oud_kp": 10.52,
+          "oud_prijs": 33.25,
+          "doel": 34.25,
+          "nieuw_kp": 10.94,
+          "concurrent": "Woonuden-DierenlampenOnline",
+          "conc_prijs": 37.75,
+          "ruimte": 4.5,
+          "levertijd": [
+            8,
+            8
+          ],
+          "vol": 39.87,
+          "bodem": 33.23
+        },
+        "3700837161345": {
+          "ean": "3700837161345",
+          "oud_kp": 1.22,
+          "oud_prijs": 15.73,
+          "doel": 16.73,
+          "nieuw_kp": 1.64,
+          "concurrent": "Cammeraat",
+          "conc_prijs": 19.99,
+          "ruimte": 4.26,
+          "levertijd": [
+            8,
+            8
+          ],
+          "vol": 17.77,
+          "bodem": 15.73
+        },
+        "3700837158109": {
+          "ean": "3700837158109",
+          "oud_kp": 1.22,
+          "oud_prijs": 15.73,
+          "doel": 16.73,
+          "nieuw_kp": 1.64,
+          "concurrent": "Cammeraat",
+          "conc_prijs": 19.95,
+          "ruimte": 4.22,
+          "levertijd": [
+            8,
+            8
+          ],
+          "vol": 17.77,
+          "bodem": 15.73
+        },
+        "3700837158086": {
+          "ean": "3700837158086",
+          "oud_kp": 1.22,
+          "oud_prijs": 15.73,
+          "doel": 16.73,
+          "nieuw_kp": 1.64,
+          "concurrent": "Cammeraat",
+          "conc_prijs": 19.95,
+          "ruimte": 4.22,
+          "levertijd": [
+            8,
+            8
+          ],
+          "vol": 17.77,
+          "bodem": 15.73
+        }
+      }
     }
   }
 }
