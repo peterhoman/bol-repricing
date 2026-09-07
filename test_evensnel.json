@@ -176,7 +176,7 @@
     "G2": {
       "gestart": "2026-09-06T17:16:29",
       "stap": 1.0,
-      "omschrijving": "15 nieuwe artikelen +EUR1.00",
+      "omschrijving": "15 nieuwe artikelen +EUR1.00; 3 Cammeraat afgevallen op 7 sept, 12 over",
       "artikelen": {
         "8717266392504": {
           "ean": "8717266392504",
@@ -369,7 +369,9 @@
           ],
           "vol": 39.87,
           "bodem": 33.23
-        },
+        }
+      },
+      "afgevallen": {
         "3700837161345": {
           "ean": "3700837161345",
           "oud_kp": 1.22,
@@ -384,7 +386,8 @@
             8
           ],
           "vol": 17.77,
-          "bodem": 15.73
+          "bodem": 15.73,
+          "afgevallen": "7 sept: koopblok 's nachts verloren aan Cammeraat (19,99) na +EUR1 naar 16,74; via dagroute gereset en 2 van 3 teruggewonnen op 16,26. Niet meer op testprijs, buiten revert."
         },
         "3700837158109": {
           "ean": "3700837158109",
@@ -400,7 +403,8 @@
             8
           ],
           "vol": 17.77,
-          "bodem": 15.73
+          "bodem": 15.73,
+          "afgevallen": "7 sept: koopblok 's nachts verloren aan Cammeraat (19,99) na +EUR1 naar 16,74; via dagroute gereset en 2 van 3 teruggewonnen op 16,26. Niet meer op testprijs, buiten revert."
         },
         "3700837158086": {
           "ean": "3700837158086",
@@ -416,7 +420,8 @@
             8
           ],
           "vol": 17.77,
-          "bodem": 15.73
+          "bodem": 15.73,
+          "afgevallen": "7 sept: koopblok 's nachts verloren aan Cammeraat (19,99) na +EUR1 naar 16,74; via dagroute gereset en 2 van 3 teruggewonnen op 16,26. Niet meer op testprijs, buiten revert."
         }
       }
     }
