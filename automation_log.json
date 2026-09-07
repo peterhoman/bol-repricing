@@ -1,15 +1,5 @@
 [
   {
-    "task": "probe_start",
-    "started": "2026-08-23T10:00:02",
-    "duration_s": 15,
-    "exit_code": 0,
-    "result": "ok",
-    "summary": [
-      "[PROBE] 8717774820230: 79.59 -> 99.6 (price 199.02 -> 247.04)"
-    ]
-  },
-  {
     "task": "probe_check",
     "started": "2026-08-23T11:30:02",
     "duration_s": 15,
@@ -741,6 +731,19 @@
       "[MATCH] Hit minimum price floor: 141",
       "[MATCH] Check failed: 11",
       "[MATCH] No competitor (no active seller, exempt from daily reset): 9"
+    ]
+  },
+  {
+    "task": "probe_start",
+    "started": "2026-09-07T10:00:02",
+    "duration_s": 142,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[OPTIMIZE] 181 bevroren artikel(en) nakijken op echte concurrentprijzen...",
+      "[OPTIMIZE] verhoogd: 24 | met rust gelaten: 51 | geen concurrent: 26 | overgeslagen (concurrent niet aantoonbaar trager): 100 = levertijd onleesbaar 1 + even snel 61 + sneller 38 | mislukt: 6",
+      "[OPTIMIZE] opbrengst: EUR 83.34 per verkoopcyclus",
+      "[DONE] frozen.json bijgewerkt en feed getriggerd"
     ]
   }
 ]
