@@ -1,18 +1,5 @@
 [
   {
-    "task": "probe_check",
-    "started": "2026-08-24T11:30:02",
-    "duration_s": 18,
-    "exit_code": 0,
-    "result": "ok",
-    "summary": [
-      "[REVERTED] 8716522051377: lost buybox - restored to safe price 119.24",
-      "[REVERTED] 8716522086256: lost buybox - restored to safe price 119.24",
-      "[DONE] Kept higher price: 0 | Reverted to safe price: 2",
-      "[LET OP] Draai de komende ~90 minuten GEEN sync_buybox.py."
-    ]
-  },
-  {
     "task": "sync",
     "started": "2026-08-24T13:30:02",
     "duration_s": 490,
@@ -744,6 +731,16 @@
       "[OPTIMIZE] verhoogd: 21 | met rust gelaten: 62 | geen concurrent: 34 | overgeslagen (concurrent niet aantoonbaar trager): 99 = levertijd onleesbaar 2 + even snel 60 + sneller 37 | mislukt: 5",
       "[OPTIMIZE] opbrengst: EUR 67.84 per verkoopcyclus",
       "[DONE] frozen.json bijgewerkt en feed getriggerd"
+    ]
+  },
+  {
+    "task": "probe_check",
+    "started": "2026-09-08T11:30:01",
+    "duration_s": 1,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[DONE] No probes currently in progress"
     ]
   }
 ]
