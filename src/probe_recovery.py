@@ -208,55 +208,141 @@ def phase_auto(limit):
 MAX_STAP = 5.0   # nooit in een keer naar de volle prijs: zie phase_optimize
 
 
+# --- Verkoperbewust margeherstel (8 sept, akkoord Peter) ---------------------
+# Een week meten (1-8 sept, NL) leerde: niet de levertijd voorspelt of een
+# verhoging het koopblok overleeft, maar de VERKOPER. Bohemian Living NL,
+# Cactula en Izziet laten ons tot 1-2 cent onder hun prijs zitten, dagen
+# achtereen, ongeacht of ze die dag "even snel" of "trager" lezen. Cammeraat
+# en Bouwkern pakken het koopblok bij elke verhoging, ook als wij euro's
+# goedkoper zijn (Cammeraat 3 van 3 op 7 sept; Bouwkern 3700837158345 op
+# 8 sept). Sebic won bij BE 3 van 3 tegen hen. De levertijdregel werkte
+# omdat de eerste groep toevallig vaak "trager" leest - maar hij hangt van de
+# weekdag af (Cactula: maandag trager, dinsdag even snel) en mist de kern.
+# Matching op begin van de naam, kleine letters ("Sebic - CAN-Interiors",
+# "Bouwkern.com", "Cammeraat ").
+VERKOPERS_VLAK_ONDER = ("bohemian living", "cactula", "izziet")
+VERKOPERS_NOOIT = ("cammeraat", "bouwkern", "sebic")
+
+# Geheugen (optimize_history.json op GitHub), voor twee lessen van 4-8 sept:
+# 1. 8716522090192 hield op 116-121 en verloor op 122,90 en 126,38 - de
+#    EUR5-stap tilde hem elke paar dagen over zijn plafond: een flip-lus die
+#    de regel zelf maakte. Na een verlies-na-verhoging: COOLDOWN dagen niets,
+#    en daarna nooit meer tot op de prijs waarop het verloor.
+# 2. "Geen concurrent" bleek twee keer een momentopname (Cammeraat 4 sept,
+#    Bouwkern 8 sept): de concurrent stond even niet op de pagina en wij
+#    stapten naar vol. Nu: pas stappen als een EERDERE run (max 3 dagen
+#    terug) ook geen concurrent zag, nooit boven de laatst geziene
+#    concurrent (7 dagen), en helemaal niet als die laatst geziene een
+#    NOOIT-verkoper was.
+HISTORY_FILE = "optimize_history.json"
+COOLDOWN_NA_VERLIES = 7       # dagen
+PLAFOND_MARGE = 1.00          # na cooldown: blijf zoveel onder de verloren prijs
+CONC_GEHEUGEN_DAGEN = 7
+GEEN_CONC_BEVESTIGING_DAGEN = 3
+HISTORY_BEWAREN_DAGEN = 60
+
+
+def fetch_json_api(filename, default=None):
+    """Zoals fetch_json, maar via de Contents-API (vers, geen CDN-cache)."""
+    h = github_headers()
+    h["Accept"] = "application/vnd.github.raw"
+    h["Cache-Control"] = "no-cache"
+    r = requests.get(f"https://api.github.com/repos/{GITHUB_REPO}/contents/{filename}", headers=h, timeout=30)
+    if r.status_code == 200:
+        return json.loads(r.text)
+    return default if default is not None else {}
+
+
+def _dagen_geleden(datum_str, vandaag):
+    if not datum_str:
+        return None
+    return (vandaag - date.fromisoformat(datum_str)).days
+
+
+def _verkoper_type(naam):
+    n = (naam or "").strip().lower()
+    if any(n.startswith(v) for v in VERKOPERS_NOOIT):
+        return "nooit"
+    if any(n.startswith(v) for v in VERKOPERS_VLAK_ONDER):
+        return "vlak_onder"
+    return "onbekend"
+
+
+def registreer_verliezen(history, frozen, engine, vandaag):
+    """
+    Wie is na een verhoging het koopblok kwijtgeraakt? Dat zien we aan
+    frozen.json: het artikel is niet meer bevroren, of is opnieuw bevroren
+    op een LAGERE prijs dan waar we het naartoe zetten (teruggewonnen via de
+    dagroute). Alleen toegerekend aan de verhoging als die hooguit 3 dagen
+    geleden was. Een artikel dat later weer op of boven de verloren prijs
+    wint, krijgt zijn record gewist (het plafond is dan achterhaald).
+    """
+    gevonden = []
+    for ean, h in history.items():
+        verhoogd_naar = h.get("verhoogd_naar")
+        dv = _dagen_geleden(h.get("laatst_verhoogd"), vandaag)
+        huidig = engine.calculate_normal_price(frozen[ean]) if ean in frozen else None
+        if h.get("verloren_op") and huidig is not None and huidig >= h["verloren_op"] - 0.005:
+            h["verloren"] = None
+            h["verloren_op"] = None
+        if verhoogd_naar and dv is not None and dv <= 3:
+            if huidig is None or huidig < verhoogd_naar - 0.05:
+                h["verloren"] = vandaag.isoformat()
+                h["verloren_op"] = verhoogd_naar
+                h["verhoogd_naar"] = None      # zodat dit verlies maar één keer telt
+                gevonden.append((ean, verhoogd_naar, huidig))
+    return gevonden
+
+
 def phase_optimize(limit):
     """
     Margeherstel op basis van de ECHTE concurrentprijzen, niet op gokwerk.
 
-    Vervangt de probe. Die zette de prijs op vol, wachtte 90 minuten en keek
-    of het koopblok het overleefde - in augustus werkte dat (15/15, 11/13),
-    daarna faalde het volledig (0/15 op 24/8, 0/13 op 31/8). De verklaring:
-    de concurrenten waren terug, en springen naar de volle prijs is bijna
-    altijd te ver. Het echte plafond ligt een paar euro hoger dan onze prijs,
-    niet dertig.
+    Vervangt de probe (die zette op vol, wachtte 90 minuten en keek of het
+    koopblok het overleefde; werkte in augustus, faalde daarna volledig).
+    Sinds 1 september lezen we per artikel alle verkopers, prijzen en
+    levertijden uit (engine.check_all_offers), ook als wij het koopblok
+    hebben.
 
-    Sinds 1 september kunnen we per artikel alle verkopers en prijzen uitlezen
-    (engine.check_all_offers), ook als wij het koopblok hebben. Dan hoeft er
-    niets meer geprobeerd, gewacht of teruggezet te worden.
+    Regels per bevroren artikel (sinds 8 sept verkoperbewust):
+      in cooldown na verlies-na-verhoging    -> niets doen
+      geen andere verkoper                   -> stap van max MAX_STAP, maar pas
+                                                als een eerdere run dat ook zag,
+                                                nooit boven de laatst geziene
+                                                concurrent, en niet als die een
+                                                NOOIT-verkoper was
+      goedkoopste ander ONDER of OP ons      -> niets doen (we winnen al)
+      goedkoopste ander is NOOIT-verkoper    -> niets doen
+      goedkoopste ander is VLAK-ONDER-verkoper -> tot UNDERCUT eronder, ongeacht levertijd
+      anders: alleen als hij aantoonbaar TRAGER levert -> tot UNDERCUT eronder;
+              even snel / sneller / onleesbaar -> niets doen
+    Altijd: max MAX_STAP per ronde, geklemd op [bodem, vol], en na een eerder
+    verlies nooit tot op de prijs waarop het verloor (PLAFOND_MARGE eronder).
 
-    Regels per bevroren artikel:
-      geen andere verkoper        -> stap omhoog van maximaal MAX_STAP
-      goedkoopste ander BOVEN ons -> alleen als die aantoonbaar TRAGER levert:
-                                     naar net eronder (UNDERCUT), zelfde plafond.
-                                     Even snel, sneller of levertijd onleesbaar
-                                     -> niets doen (zie de toelichting in de lus)
-      goedkoopste ander ONDER ons -> niets doen
-
-    Dat laatste is niet vanzelfsprekend maar wel juist: duurder zijn dan een
-    concurrent en toch het koopblok houden komt voor (verkopersbeoordeling,
-    levertijd). Verlagen zou marge weggeven voor iets wat we al hebben.
-
-    Altijd geklemd op [bodemprijs, volle prijs]. En nooit in een keer naar de
-    volle prijs bij "geen concurrent": een pagina die verkeerd geparsed is ziet
-    er precies zo uit, en MAX_STAP per ronde komt binnen een paar dagen op
-    hetzelfde punt uit met veel minder risico.
+    De EUR5-stap per ronde is bewust: een pagina die verkeerd geparsed is ziet
+    er precies zo uit als "geen concurrent", en stapsgewijs kom je binnen een
+    paar dagen op hetzelfde punt uit met veel minder risico. Bij Bohemian
+    duurde het 2-3 dagen tot 2 cent onder - allemaal gehouden.
     """
     engine = RepricingEngine(CSV_URL)
     frozen = engine.load_frozen_eans()
     feed = engine.bliving_klantprijzen
     eans = [e for e in frozen if e in feed][:limit]
+    vandaag = date.today()
+    history = fetch_json_api(HISTORY_FILE, {})
+
+    verliezen = registreer_verliezen(history, frozen, engine, vandaag)
+    for ean, prijs, huidig in verliezen:
+        print(f"[VERLIES] {ean}: verhoogd naar EUR{prijs:.2f}, nu "
+              f"{'niet meer bevroren' if huidig is None else f'teruggewonnen op EUR{huidig:.2f}'} "
+              f"-> {COOLDOWN_NA_VERLIES} dagen rust, daarna plafond EUR{prijs - PLAFOND_MARGE:.2f}")
 
     print(f"\n[OPTIMIZE] {len(eans)} bevroren artikel(en) nakijken op echte concurrentprijzen...")
     session = requests.Session()
-    verhoogd, met_rust, geen_concurrent, mislukt = {}, 0, 0, 0
-    # Overgeslagen omdat de concurrent niet aantoonbaar trager is, in DRIE
-    # groepen. Die vragen elk een andere conclusie: "sneller" en "even snel"
-    # zijn terecht overgeslagen (12% en 20% behoud op 1 sept), maar bij
-    # "levertijd onleesbaar" weten we het simpelweg niet - bol.com toont daar
-    # een bereik als "1 - 2 weken" dat _levertijd_dagen niet leest. Tegenover
-    # onze 3-5 werkdagen is zo'n concurrent eerder trager dan gelijk. Zolang
-    # de drie op een hoop lagen (teller `niet_sneller`, t/m 2 sept) was niet
-    # te zien of we terecht voorzichtig waren of onnodig geld lieten liggen.
-    lev_onleesbaar, lev_gelijk, lev_sneller = 0, 0, 0
+    verhoogd, met_rust, mislukt = {}, 0, 0
+    geen_conc_bevestigd, geen_conc_wacht, geen_conc_geblokkeerd = 0, 0, 0
+    cooldown, verkoper_nooit, verkoper_vlak = 0, 0, 0
+    lev_onleesbaar, lev_gelijk, lev_sneller, lev_trager = 0, 0, 0, 0
     overgeslagen = []
     regels = []
 
@@ -269,47 +355,79 @@ def phase_optimize(limit):
         bodem = engine.calculate_minimum_price(feed[ean])
         vol = engine.calculate_normal_price(feed[ean])
         anderen = res["others"]
+        h = history.setdefault(ean, {})
+
+        dv = _dagen_geleden(h.get("verloren"), vandaag)
+        if dv is not None and dv < COOLDOWN_NA_VERLIES:
+            cooldown += 1
+            overgeslagen.append((ean, onze, h.get("verloren_op") or 0, "-", None, None,
+                                 f"cooldown (verloor {dv}d geleden op {h['verloren_op']:.2f})"))
+            continue
+        plafond = (h["verloren_op"] - PLAFOND_MARGE) if h.get("verloren_op") else None
 
         if not anderen:
-            geen_concurrent += 1
+            laatst = _dagen_geleden(h.get("conc_gezien"), vandaag)
+            eerder_geen = _dagen_geleden(h.get("geen_conc_gezien"), vandaag)
+            h["geen_conc_gezien"] = vandaag.isoformat()
+            if laatst is not None and laatst <= CONC_GEHEUGEN_DAGEN and _verkoper_type(h.get("conc_naam")) == "nooit":
+                geen_conc_geblokkeerd += 1
+                overgeslagen.append((ean, onze, h.get("conc_prijs") or 0, h.get("conc_naam", "?"), None, None,
+                                     f"geen concurrent, maar {laatst}d geleden nog {h.get('conc_naam', '?')[:16]} (nooit-verkoper)"))
+                continue
+            if eerder_geen is None or eerder_geen == 0 or eerder_geen > GEEN_CONC_BEVESTIGING_DAGEN:
+                geen_conc_wacht += 1
+                overgeslagen.append((ean, onze, 0, "-", None, None, "geen concurrent, wacht op bevestiging volgende run"))
+                continue
+            geen_conc_bevestigd += 1
             doel = min(onze + MAX_STAP, vol)
-            reden = "geen concurrent"
+            reden = "geen concurrent (bevestigd)"
+            if laatst is not None and laatst <= CONC_GEHEUGEN_DAGEN and h.get("conc_prijs"):
+                doel = min(doel, h["conc_prijs"] - UNDERCUT)
+                reden += f", plafond {h.get('conc_naam', '?')[:14]} {h['conc_prijs']:.2f} ({laatst}d)"
         else:
             laagste, naam, conc_lev = anderen[0]
             onze_lev = res.get("our_delivery")
+            h["conc_gezien"] = vandaag.isoformat()
+            h["conc_prijs"] = laagste
+            h["conc_naam"] = naam
             if laagste <= onze:
                 met_rust += 1
                 continue
-            # Alleen verhogen tegen een AANTOONBAAR TRAGERE concurrent.
-            # Meting 2 september over 123 artikelen: tot net onder de
-            # concurrent gaan hield 3 van 3 bij een tragere, maar slechts
-            # 20% bij een even snelle en 12% bij een snellere. Ons
-            # prijsverschil compenseert daar het levertijdnadeel (wij 3-5
-            # werkdagen tegen concurrenten die morgen leveren); haal je dat
-            # weg, dan wint hun snellere levering. "Gelijk" is bovendien de
-            # grootste groep (30 van 59), dus die met "trager" samenvoegen
-            # zou de kleinste groep de regel laten bepalen - punt van de
-            # BE-chat, en terecht.
-            if conc_lev is None or onze_lev is None:
-                lev_onleesbaar += 1
-                overgeslagen.append((ean, onze, laagste, naam, onze_lev, conc_lev, "levertijd onleesbaar"))
+            soort = _verkoper_type(naam)
+            if soort == "nooit":
+                verkoper_nooit += 1
+                overgeslagen.append((ean, onze, laagste, naam, onze_lev, conc_lev, "verkoper: nooit verhogen"))
                 continue
-            if conc_lev == onze_lev:
-                lev_gelijk += 1
-                overgeslagen.append((ean, onze, laagste, naam, onze_lev, conc_lev, "even snel"))
-                continue
-            if conc_lev < onze_lev:
-                lev_sneller += 1
-                overgeslagen.append((ean, onze, laagste, naam, onze_lev, conc_lev, "sneller"))
-                continue
+            if soort == "vlak_onder":
+                verkoper_vlak += 1
+                reden = f"onder {naam[:22]} (EUR{laagste:.2f}, vlak-onder-verkoper)"
+            else:
+                if conc_lev is None or onze_lev is None:
+                    lev_onleesbaar += 1
+                    overgeslagen.append((ean, onze, laagste, naam, onze_lev, conc_lev, "levertijd onleesbaar"))
+                    continue
+                if conc_lev == onze_lev:
+                    lev_gelijk += 1
+                    overgeslagen.append((ean, onze, laagste, naam, onze_lev, conc_lev, "even snel"))
+                    continue
+                if conc_lev < onze_lev:
+                    lev_sneller += 1
+                    overgeslagen.append((ean, onze, laagste, naam, onze_lev, conc_lev, "sneller"))
+                    continue
+                lev_trager += 1
+                reden = f"onder {naam[:22]} (EUR{laagste:.2f}, levert {conc_lev - onze_lev}d later)"
             doel = min(laagste - UNDERCUT, onze + MAX_STAP, vol)
-            reden = f"onder {naam[:22]} (EUR{laagste:.2f}, levert {conc_lev - onze_lev}d later)"
 
+        if plafond is not None and doel > plafond:
+            doel = plafond
+            reden += f", plafond na verlies {plafond:.2f}"
         doel = max(doel, bodem)
         if doel <= onze + 0.02:
             met_rust += 1
             continue
         verhoogd[ean] = engine.calculate_klantprijs_for_target_price(doel)
+        h["laatst_verhoogd"] = vandaag.isoformat()
+        h["verhoogd_naar"] = round(doel, 2)
         regels.append((ean, onze, doel, round(doel - onze, 2), reden))
         if (i + 1) % 20 == 0:
             print(f"   {i+1}/{len(eans)} bekeken...")
@@ -319,21 +437,31 @@ def phase_optimize(limit):
         print(f"{ean:<15}{nu:>9.2f}{doel:>9.2f}{plus:>8.2f}  {reden}")
 
     # Alleen in het lokale log (geen [..]-prefix): per overgeslagen artikel
-    # de levertijden, zodat de verdeling van de teller hieronder na te lopen is.
+    # de reden, prijzen en levertijden, zodat de tellers hieronder na te lopen zijn.
     if overgeslagen:
         print()
         print(f"{'EAN':<15}{'onze':>9}{'conc.':>9}  {'wij':>4} {'zij':>4}  reden / verkoper")
         for ean, nu, conc, naam, wl, cl, reden in overgeslagen:
             wl_s = "?" if wl is None else str(wl)
             cl_s = "?" if cl is None else str(cl)
-            print(f"{ean:<15}{nu:>9.2f}{conc:>9.2f}  {wl_s:>4} {cl_s:>4}  {reden} / {naam[:22]}")
+            print(f"{ean:<15}{nu:>9.2f}{conc:>9.2f}  {wl_s:>4} {cl_s:>4}  {reden} / {str(naam)[:22]}")
 
-    print(f"\n[OPTIMIZE] verhoogd: {len(verhoogd)} | met rust gelaten: {met_rust} "
-          f"| geen concurrent: {geen_concurrent} "
-          f"| overgeslagen (concurrent niet aantoonbaar trager): {len(overgeslagen)} "
-          f"= levertijd onleesbaar {lev_onleesbaar} + even snel {lev_gelijk} + sneller {lev_sneller} "
-          f"| mislukt: {mislukt}")
+    n_over = len(overgeslagen)
+    print(f"\n[OPTIMIZE] verhoogd: {len(verhoogd)} "
+          f"(vlak-onder-verkoper {verkoper_vlak}, trager {lev_trager}, geen concurrent {geen_conc_bevestigd}) "
+          f"| met rust gelaten: {met_rust} | overgeslagen: {n_over} "
+          f"= nooit-verkoper {verkoper_nooit} + even snel {lev_gelijk} + sneller {lev_sneller} "
+          f"+ onleesbaar {lev_onleesbaar} + cooldown {cooldown} + geen conc. wacht {geen_conc_wacht} "
+          f"+ geen conc. geblokkeerd {geen_conc_geblokkeerd} | mislukt: {mislukt}")
     print(f"[OPTIMIZE] opbrengst: EUR {sum(r[3] for r in regels):.2f} per verkoopcyclus")
+
+    # Geheugen opschonen en altijd wegschrijven (ook de verliezen en de
+    # "gezien"-datums van vandaag zijn waardevol als er niets verhoogd is).
+    grens = HISTORY_BEWAREN_DAGEN
+    history = {e: h for e, h in history.items()
+               if any(_dagen_geleden(h.get(k), vandaag) is not None and _dagen_geleden(h.get(k), vandaag) <= grens
+                      for k in ("laatst_verhoogd", "verloren", "conc_gezien", "geen_conc_gezien"))}
+    upload_json(history, HISTORY_FILE, f"Optimize-geheugen {vandaag.isoformat()}: {len(verhoogd)} verhoogd, {len(verliezen)} verlies geregistreerd")
 
     if not verhoogd:
         print("[DONE] Niets te wijzigen")
