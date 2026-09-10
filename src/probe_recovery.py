@@ -378,7 +378,7 @@ def phase_optimize(limit):
                 geen_conc_wacht += 1
                 overgeslagen.append((ean, onze, 0, "-", None, None, "geen concurrent, wacht op bevestiging volgende run"))
                 continue
-            geen_conc_bevestigd += 1
+            tak = "geen"
             doel = min(onze + MAX_STAP, vol)
             reden = "geen concurrent (bevestigd)"
             if laatst is not None and laatst <= CONC_GEHEUGEN_DAGEN and h.get("conc_prijs"):
@@ -399,7 +399,7 @@ def phase_optimize(limit):
                 overgeslagen.append((ean, onze, laagste, naam, onze_lev, conc_lev, "verkoper: nooit verhogen"))
                 continue
             if soort == "vlak_onder":
-                verkoper_vlak += 1
+                tak = "vlak"
                 reden = f"onder {naam[:22]} (EUR{laagste:.2f}, vlak-onder-verkoper)"
             else:
                 if conc_lev is None or onze_lev is None:
@@ -414,7 +414,7 @@ def phase_optimize(limit):
                     lev_sneller += 1
                     overgeslagen.append((ean, onze, laagste, naam, onze_lev, conc_lev, "sneller"))
                     continue
-                lev_trager += 1
+                tak = "trager"
                 reden = f"onder {naam[:22]} (EUR{laagste:.2f}, levert {conc_lev - onze_lev}d later)"
             doel = min(laagste - UNDERCUT, onze + MAX_STAP, vol)
 
@@ -426,6 +426,12 @@ def phase_optimize(limit):
             met_rust += 1
             continue
         verhoogd[ean] = engine.calculate_klantprijs_for_target_price(doel)
+        if tak == "vlak":
+            verkoper_vlak += 1
+        elif tak == "trager":
+            lev_trager += 1
+        else:
+            geen_conc_bevestigd += 1
         h["laatst_verhoogd"] = vandaag.isoformat()
         h["verhoogd_naar"] = round(doel, 2)
         regels.append((ean, onze, doel, round(doel - onze, 2), reden))
