@@ -1,6 +1,7 @@
 {
-  "groepen": {
-    "G1": {
+  "groepen": {},
+  "afgerond": {
+    "G1_20260910": {
       "gestart": "2026-09-04T19:19:41",
       "stap": 1.0,
       "artikelen": {
@@ -84,9 +85,10 @@
           "vol": 67.26,
           "bodem": 54.91
         }
-      }
+      },
+      "afgesloten": "Test even-snel afgesloten 10 sept, ZONDER terugzetten: de artikelen die staan houden hun prijs (terugzetten geeft bewezen marge weg); de test is opgevolgd door het verkoperbewuste optimize van 8 sept. Uitslag: +EUR1/+EUR2 ruim onder de concurrent houdt bij Bohemian/Cactula/Izziet/Woonuden/LaSpada; verliest bij Cammeraat (3/3) en toonies-woondeco (2/3 na 3 dagen)."
     },
-    "G1b": {
+    "G1b_20260910": {
       "gestart": "2026-09-06T17:16:09",
       "stap": 1.0,
       "omschrijving": "groep G1 nog +EUR1.00 (terugzetpunt = prijs van G1)",
@@ -171,9 +173,10 @@
           "vol": 67.26,
           "bodem": 54.91
         }
-      }
+      },
+      "afgesloten": "Test even-snel afgesloten 10 sept, ZONDER terugzetten: de artikelen die staan houden hun prijs (terugzetten geeft bewezen marge weg); de test is opgevolgd door het verkoperbewuste optimize van 8 sept. Uitslag: +EUR1/+EUR2 ruim onder de concurrent houdt bij Bohemian/Cactula/Izziet/Woonuden/LaSpada; verliest bij Cammeraat (3/3) en toonies-woondeco (2/3 na 3 dagen)."
     },
-    "G2": {
+    "G2_20260910": {
       "gestart": "2026-09-06T17:16:29",
       "stap": 1.0,
       "omschrijving": "15 nieuwe artikelen +EUR1.00; 3 Cammeraat afgevallen op 7 sept, 12 over",
@@ -423,7 +426,8 @@
           "bodem": 15.73,
           "afgevallen": "7 sept: koopblok 's nachts verloren aan Cammeraat (19,99) na +EUR1 naar 16,74; via dagroute gereset en 2 van 3 teruggewonnen op 16,26. Niet meer op testprijs, buiten revert."
         }
-      }
+      },
+      "afgesloten": "Test even-snel afgesloten 10 sept, ZONDER terugzetten: de artikelen die staan houden hun prijs (terugzetten geeft bewezen marge weg); de test is opgevolgd door het verkoperbewuste optimize van 8 sept. Uitslag: +EUR1/+EUR2 ruim onder de concurrent houdt bij Bohemian/Cactula/Izziet/Woonuden/LaSpada; verliest bij Cammeraat (3/3) en toonies-woondeco (2/3 na 3 dagen)."
     }
   }
 }
