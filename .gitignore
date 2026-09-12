@@ -1,0 +1,19 @@
+.env
+.env.local
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+*.db
+*.sqlite
+*.sqlite3
+.DS_Store
+.vscode/
+.idea/
+*.log
+
+# werkbestanden van de scripts (13 MB, o.a. uitvoer van 1 juli) - niet in de opslagplaats
+output/
