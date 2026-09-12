@@ -56,7 +56,7 @@ class RepricingEngine:
             headers["Authorization"] = f"Bearer {token}"
         return headers
 
-    def _get_with_retries(self, url: str, timeout: int = 30, retries: int = 5, backoff: int = 10):
+    def _get_with_retries(self, url: str, timeout: int = 30, retries: int = 7, backoff: int = 10):
         """
         GET a URL with a few retries on connection failures (timeouts,
         DNS hiccups, etc.) before giving up. Added after a couple of
@@ -66,14 +66,17 @@ class RepricingEngine:
         with a short pause turns most of those transient blips into a
         silent success instead of a failed GitHub Actions run.
 
-        The wait DOUBLES per attempt (10s, 20s, 40s, 80s). The old flat
-        3x10s only covered about 2 minutes of supplier downtime, and both
-        failed runs on 25 and 26 July were B-Living being unreachable for
-        just over that - all 3 attempts burned inside the outage. 5 attempts
-        with doubling backoff ride out roughly 5 minutes instead, which
-        turns this class of blip into a silent success. Cron runs are 30
-        minutes apart, so even the longest retry chain can never overlap
-        the next run.
+        The wait DOUBLES per attempt (10s, 20s, 40s, 80s, 160s, 320s). The
+        old flat 3x10s only covered about 2 minutes of supplier downtime,
+        and both failed runs on 25 and 26 July were B-Living being
+        unreachable for just over that. 5 attempts (~2.5 min) rode out most
+        blips, but on 11 Sept (23:02) all 5 burned again, and BE measured
+        the same week 4 failures in 48 afternoon runs (13:00-15:00) against
+        0 in 152 outside it - B-Living has short afternoon outages that
+        outlast 2.5 minutes. 7 attempts with doubling backoff wait ~10.5
+        minutes in total (12 Sept, Peter's approval). Cron runs are 30
+        minutes apart, so the longest chain still can never overlap the
+        next run; never push this past ~20 minutes.
         """
         last_exception = None
         wait = backoff
