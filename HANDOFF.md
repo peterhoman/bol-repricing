@@ -3,8 +3,8 @@
 Startdocument voor elke nieuwe chat op dit project. Oorspronkelijk
 geschreven bij de OneDrive-migratie van 25 juli, sindsdien bijgehouden.
 
-**Laatst bijgewerkt: 12 september 2026, 19:00** (dag 4 schoon, bevroren 194;
-"Run failed"-oorzaken van deze week vastgelegd).
+**Laatst bijgewerkt: 12 september 2026, 20:00** (map aan `main` gehangen,
+documentatie op GitHub, Git-regels vastgelegd; retry naar 7 pogingen).
 
 Wijzigingen in omgekeerde volgorde (nieuwste eerst): optimize-limiet 200 +
 tellersplitsing (3 sept), margeherstel op echte concurrentprijzen (1-2 sept,
@@ -659,6 +659,51 @@ codewijziging moet `src/phase2_repricing.py` dus los naar GitHub geüpload
 worden via de Contents API. Gebruik daar NIET `setup_upload.py` voor: dat
 uploadt ook de lokale statusbestanden, die hier vaak lege stubs zijn, en
 wist daarmee de live status.
+
+## GIT-REGELS (12 september, Peter) - LEES DIT VOOR JE IETS VASTLEGT
+
+Sinds 12 sept hangt deze map aan de tak `main` van GitHub (daarvoor stond
+hij op een lege tak `master` met nul versies; Git diende alleen om de
+geschiedenis op GitHub te lezen). GitHub is niet alleen de opslag van de
+code, het is ook de LIVE DATABASE: elke cloud-run en elke taak op deze pc
+schrijft daar zijn status heen (`frozen.json`, `state.json`, `big_gap.json`,
+`master_tracked.json`, `no_competitor.json`, `audit_report.json`,
+`probe_history.json`, `optimize_history.json`, `frozen_probe_backup.json`,
+`automation_log.json`, `test_evensnel.json`, `repricing_current.xml`,
+`bolcom_productinformatie.csv`). Daarom drie harde regels:
+
+1. **De databestanden nooit vanuit deze map vastleggen.** Die schrijven de
+   scripts zelf via de Contents-API. De lokale kopieën zijn binnen een half
+   uur verouderd (de cloud draait elke xx:05 en xx:35) en waren tot 12 sept
+   zelfs helemaal afwezig. Vóór elke vastlegging: eerst `git fetch origin
+   main` en `git merge --ff-only origin/main`, en dan controleren dat
+   `git status` bij die bestanden 0 gewijzigd en 0 verwijderd toont.
+2. **Geen `git add -A`, geen `git add .`, geen force-push.** Altijd elk
+   bestand bij naam toevoegen. Waarom, met het voorbeeld: staan de
+   databestanden lokaal verouderd of ontbreken ze (zoals vóór 12 sept), dan
+   ziet Git ze als gewijzigd of verwijderd. Eén alles-toevoegen plus push
+   zet dan een oude `frozen.json` op GitHub of wist hem - en daarmee de
+   echte, levende data waar 24 cron-runs per dag op draaien. Een force-push
+   zou bovendien de 7.058 versies geschiedenis vernietigen.
+3. **Pushen alleen buiten de taakvensters en direct ná een geslaagde
+   cloud-run** (dus in het kwartier na xx:05 of xx:35), nooit tussen 08:10
+   en 14:00 op werkdagen (09:40-14:00 in het weekend). Weigert GitHub de
+   push omdat de cloud intussen schreef: `git pull --rebase origin main` en
+   opnieuw pushen. Nooit overschrijven.
+
+Wat bewust NIET in de opslagplaats staat (blijft alleen lokaal, en in de
+kopie `..ol-repricing-kopie-12sept`): `.env` (sleutels), `bol_repricing.db`,
+`STATUS.md` en `bodemprijs_lijst_22juli.csv` (juni/juli, achterhaald),
+`output/` (werkbestanden, in `.gitignore`), en de vijf oude scripts
+`src/main.py`, `phase2.py`, `db.py`, `bol_api.py`, `repricing.py` (opzet van
+juni met lokale database, allang vervangen - naast de live scripts zetten
+verwart een volgende chat).
+
+Codewijzigingen mogen via Git (bestand bij naam, commit, gewone push) óf via
+de Contents-API zoals de scripts het doen; allebei geverifieerd op GitHub
+nalezen. Let op: een push of API-upload kan samenvallen met een vertraagde
+cron-run; dat geeft hooguit één onschuldige "Run failed"-mail (409), de
+volgende run maakt het goed (12 sept 18:53).
 
 ## EERST DOEN bij elke nieuwe sessie: automation_log.json controleren
 
