@@ -3,8 +3,8 @@
 Startdocument voor elke nieuwe chat op dit project. Oorspronkelijk
 geschreven bij de OneDrive-migratie van 25 juli, sindsdien bijgehouden.
 
-**Laatst bijgewerkt: 12 september 2026, 20:00** (map aan `main` gehangen,
-documentatie op GitHub, Git-regels vastgelegd; retry naar 7 pogingen).
+**Laatst bijgewerkt: 16 september 2026, 13:30** (vakantiepauze 25 sept t/m 2 okt
+gebouwd; meldafspraak: alleen bij bijzonderheden).
 
 Wijzigingen in omgekeerde volgorde (nieuwste eerst): optimize-limiet 200 +
 tellersplitsing (3 sept), margeherstel op echte concurrentprijzen (1-2 sept,
@@ -20,7 +20,7 @@ Het systeem draait volledig automatisch. Peter uploadt 's ochtends het
 bestand (vóór 08:10 op werkdagen, vóór 09:40 in het weekend), verder niets.
 Begin elke sessie met `automation_log.json` via de Contents-API.
 
-Ruwe cijfers: ~150-200 producten per dagexport, 194 bevroren artikelen,
+Ruwe cijfers: ~150-200 producten per dagexport, 196 bevroren artikelen,
 cron 24 runs/dag, audit al weken schoon.
 
 ### De levertijdregel is bewezen op de scherpe rand (3 sept)
@@ -65,6 +65,33 @@ bedoeling, geen storing. Bij de sync van 13:30 is een verlies per artikel
 te herleiden: de tabel `EAN / nu / wordt / erbij / reden` staat in
 `logs/automation-2026-09.log` (lokaal), online alleen de tellers.
 
+## VAKANTIE 25 SEPT T/M 2 OKT (Peter, 16 sept) - wat er dan gebeurt
+
+Peter is weg van vr 25 sept t/m vr 2 okt. Op de 25e gaat er niets meer de
+deur uit; er staat een langere levertijd; **de pc thuis gaat uit**; vanaf
+het vakantieadres zet Peter af en toe een nieuw bestand op GitHub (website,
+zelfde naam).
+
+**Gebouwd (16 sept, akkoord Peter): vakantiepauze in `phase_optimize`.**
+`VAKANTIE_VAN`/`VAKANTIE_TOT` bovenaan `probe_recovery.py`; als de datum in
+het venster valt, print de run `[VAKANTIE] ...` en stopt vóór het laden van
+engine, geheugen of frozen.json - dus geen verhogingen én geen verliezen
+geregistreerd (die zouden aan de prijs worden toegeschreven terwijl de
+levertijd de oorzaak is). Verlagen, bevriezen, sync lopen door. Op 3 okt
+gaat het vanzelf weer aan. Stub-getest op 24-09 (normaal), 25-09, 28-09,
+02-10 (pauze), 03-10 (normaal). `[VAKANTIE]` staat in de prefix-lijst van
+`scheduled_run.py`. Instructie voor BE: `instructie-BE-vakantiepauze.md`.
+
+**Wat "pc uit" betekent:** snelstart, optimize en sync draaien niet; alleen
+de cloud-cron (reset, EUR0,50-stappen, bevroren vasthouden, klemmen). Zonder
+sync worden bevroren verliezers NIET ontdooid - ze blijven een week op hun
+prijs staan, geen schade. Bij terugkomst: pc aan; gemiste taken halen
+zichzelf mogelijk in (-StartWhenAvailable); een inhaal-optimize 's avonds is
+onschuldig (Channable importeert 's nachts niet). **De eerste sync na
+terugkomst kan tientallen ontdooiingen geven: dat is opruimen, geen verlies
+van die dag.** De chat hoeft in de vakantie niets te doen; `automation_log`
+laat dan een gat zien vanaf de dag dat de pc uitging - dat is verwacht.
+
 ## VERKOPERBEWUST OPTIMIZE (8 sept, 15:30, Peter: "als het een verbetering is mag je bouwen, maar controleer dagelijks")
 
 `phase_optimize` in `src/probe_recovery.py` is herschreven (backup van de
@@ -103,6 +130,14 @@ de 8 "geen concurrent" van vandaag zodat ze morgen meteen bevestigd zijn).
 `verhoogd: N (vlak-onder-verkoper a, trager b, geen concurrent c) | met rust: M | overgeslagen: O = nooit-verkoper + even snel + sneller + onleesbaar + cooldown + geen conc. wacht + geen conc. geblokkeerd | mislukt: X`
 Optelsom: verhoogd + met rust + overgeslagen + mislukt = bekeken. De oude
 overlap van `geen concurrent` is hiermee weg.
+
+**Meldafspraak (Peter, 15 sept):** de dagelijkse controle hieronder blijft,
+maar Peter krijgt alleen nog een bericht ALS IETS OPVALT: een taak die
+mislukt of ontbreekt, een verlies uit een verhoging van dezelfde dag, een
+vlak-onder-verkoper die 2+ artikelen op één dag pakt, een "geen
+concurrent"-verhoging die 's nachts wegvalt, ongewone aantallen (0 geladen,
+veel ontdooid), of een "Run failed" die geen B-Living-storing of 409 is.
+Geen nieuws = geen bericht. Op vrijdag een kort weekoverzicht.
 
 **Dagelijkse controle (afspraak met Peter, 8 sept) - elke dag na 13:30:**
 1. `automation_log.json`: alle vier de taken `ok`; tellerregel optellen.
@@ -235,6 +270,70 @@ verlies zou ook op de oude prijs gebeurd zijn (hij zit onder onze bodem);
 de verhoging heeft 1-5 dagen extra marge gepakt. Het geheugen kent
 Kadootjeswinkel nu als laatst geziene concurrent bij alle 8, dus bij een
 volgend "geen concurrent" is het plafond 14,93 -> geen verhoging meer.
+
+### 15 sept (dinsdag): dag 7 - stabiel
+
+Ochtend-CSV: 0 van de 10 van maandag 's nachts verloren.
+
+| taak | uitkomst 15 sept |
+|---|---|
+| 08:15 morning | 180 gematcht, 6 al winnend |
+| 10:00 optimize | 195 bekeken, **4 verhoogd (+EUR15,43)**, allemaal geen concurrent (bevestigd), 2 op vol afgekapt; 82 met rust; 103 overgeslagen (nooit 37, even snel 37, sneller 10, onleesbaar 3, cooldown 4, wacht 12); 6 mislukt. Optelsom 195 klopt |
+| 13:30 sync | 1 nieuwe winnaar, **2 verloren** (8716522089653, 8716522090277 - allebei nieuwe winnaars van 12 sept, niet verhoogd), bevroren 196 |
+
+Het systeem zit in zijn stabiele stand: de inhaalslag van 4-13 sept is
+binnen (ruim EUR450/cyclus), de grote groepen staan op 2 cent onder of op
+vol, en per dag komt er nog een paar tientjes uit. Weekoverzicht sinds de
+verkoperregel (9-15 sept): 6 dagen, 89 verhogingen, EUR 337 per cyclus,
+verliezen na verhoging: 4 (alle vier verklaard: 3x concurrent onder onze
+bodem, 1x derde factor), nooit-verkopers 34-38 per dag met rust.
+
+### 14 sept (maandag): eerste maandag met de verkoperregel - geen sprong
+
+Ochtend-CSV: 0 van de 24 van zondag 's nachts verloren.
+
+| taak | uitkomst 14 sept |
+|---|---|
+| 08:15 morning | 188 gematcht, 4 al winnend |
+| 10:00 optimize | 189 bekeken, **10 verhoogd (+EUR33,23), allemaal "geen concurrent (bevestigd)"**, waarvan 5 al afgekapt op de volle prijs; 76 met rust; 97 overgeslagen (nooit 37, even snel 41, sneller 12, onleesbaar 3, cooldown 4); 6 mislukt. Optelsom 189 klopt |
+| 13:30 sync | 3 nieuwe winnaars, **1 verloren** (8717266011696, toonies, niet verhoogd), bevroren 192 |
+
+Vorige week maandag gaf de levertijdtekst een sprong van 24 verhogingen;
+nu is maandag een gewone dag, omdat de regel naar de verkoper kijkt en de
+Bohemian/Cactula-artikelen al op 2 cent onder of op vol staan. De
+Cactula-groep zonder concurrent bereikt nu de volle prijs (322,74; 296,84;
+346,64) en staat daarna stil - precies het eindpunt van die tak.
+
+### 13 sept (zondag), avond: twee "Run failed", allebei de bedoelde noodstop
+
+Dagtotaal zondag: 26 cloud-runs, 24 ok, 2 mislukt. Allebei nagekeken:
+- **21:12**: B-Living onbereikbaar, alle 7 pogingen (14 min 11 s) - de nieuwe
+  retry heeft dus gewerkt zoals bedoeld en daarna terecht opgegeven: een
+  storing van ruim een kwartier is geen "hikje" meer. Run 21:40 slaagde.
+- **125b1dd, eerder die dag**: PREFLIGHT-stop (`master_tracked.json` niet
+  leesbaar via de raw-URL, verbinding gereset) - de bewuste noodstop zonder
+  upload; volgende run slaagde.
+Geen actie. Twee mails per week bij dit soort storingen is het normale
+niveau; pas als B-Living structureel langer dan een kwartier wegvalt, is een
+langere retry te overwegen (max ~20 min, zie GIT-REGELS/retry-blok).
+
+### 13 sept (zondag): dag 5 - geheugen zichtbaar aan het werk
+
+Ochtend-CSV: 0 van de 14 van zaterdag 's nachts verloren. Cloud-dagtotaal
+zaterdag: 26 runs (25 ok + de 409).
+
+| taak | uitkomst 13 sept |
+|---|---|
+| 09:45 snelstart | 183 gematcht, 1 al winnend |
+| 10:00 optimize | 193 bekeken, **24 verhoogd (+EUR84,03), allemaal "geen concurrent (bevestigd)"**; 64 met rust; 98 overgeslagen (nooit 38, even snel 42, sneller 9, onleesbaar 5, cooldown 4); 7 mislukt. Optelsom 193 klopt |
+| 13:30 sync | 4 nieuwe winnaars, **1 verloren** (8014772136500, EUR91,59, niet verhoogd), bevroren 187 |
+
+`[VERLIES]` registreerde de drie van zaterdagnacht (Kadootjeswinkel-,
+Sjoek- en Dobeno-geval) met cooldown en plafond. En het plafond "laatst
+geziene concurrent" was vandaag vier keer zichtbaar: allelijsten 29,95 ->
+doel 29,93; Sky Home 24,95 / 22,95 -> 24,93 / 22,93 / 20,60. Precies de
+bedoeling: op zondag verdwijnen concurrenten van de pagina, maar we
+stappen niet boven hun prijs van vrijdag.
 
 ### 12 sept (zaterdag), middag: dag 4 schoon + de twee "Run failed" van deze week verklaard
 
@@ -1640,6 +1739,8 @@ project gewerkt.
   10-euro-knik, en de bandcontrole over 87 bevroren artikelen gaf 0 boven
   de volle prijs en 0 onder de bodem. Geen reparatie nodig geweest.)
 
+- NL → BE: `...\bol-repricing\instructie-BE-vakantiepauze.md` (16 sept:
+  verhogingen pauzeren 25 sept t/m 2 okt, en wat "pc uit" betekent)
 - NL → BE: `...\bol-repricing\antwoord-BE-levertijdregel-eerste-dag.md`
   (2 sept: de eerste live dag van de levertijdregel, plus drie punten die
   BE aandroeg en die hier zijn nagetrokken — hun sorteerbug hebben wij

@@ -223,6 +223,16 @@ MAX_STAP = 5.0   # nooit in een keer naar de volle prijs: zie phase_optimize
 VERKOPERS_VLAK_ONDER = ("bohemian living", "cactula", "izziet")
 VERKOPERS_NOOIT = ("cammeraat", "bouwkern", "sebic")
 
+# Vakantiepauze (Peter, 16 sept): van 25 sept t/m 2 okt gaat er niets de deur
+# uit en staat er een langere levertijd. Dan staan we bij bol.com zwakker, en
+# verhogingen tegen een concurrent zouden koopblokken kosten die het geheugen
+# vervolgens ten onrechte aan de PRIJS toeschrijft (plafonds die na de
+# vakantie te laag zijn). Daarom in dit venster: niets verhogen, geheugen
+# niet aanraken, ook geen verliezen registreren. Verlagen, bevriezen en de
+# sync lopen gewoon door. Na VAKANTIE_TOT gaat het vanzelf weer aan.
+VAKANTIE_VAN = date(2026, 9, 25)
+VAKANTIE_TOT = date(2026, 10, 2)
+
 # Geheugen (optimize_history.json op GitHub), voor twee lessen van 4-8 sept:
 # 1. 8716522090192 hield op 116-121 en verloor op 122,90 en 126,38 - de
 #    EUR5-stap tilde hem elke paar dagen over zijn plafond: een flip-lus die
@@ -324,11 +334,17 @@ def phase_optimize(limit):
     paar dagen op hetzelfde punt uit met veel minder risico. Bij Bohemian
     duurde het 2-3 dagen tot 2 cent onder - allemaal gehouden.
     """
+    vandaag = date.today()
+    if VAKANTIE_VAN <= vandaag <= VAKANTIE_TOT:
+        print(f"[VAKANTIE] {vandaag:%d-%m}: verhogingen gepauzeerd van {VAKANTIE_VAN:%d-%m} t/m "
+              f"{VAKANTIE_TOT:%d-%m} (langere levertijd). Niets verhoogd, geheugen niet aangeraakt; "
+              f"verlagen, bevriezen en sync lopen door.")
+        return
+
     engine = RepricingEngine(CSV_URL)
     frozen = engine.load_frozen_eans()
     feed = engine.bliving_klantprijzen
     eans = [e for e in frozen if e in feed][:limit]
-    vandaag = date.today()
     history = fetch_json_api(HISTORY_FILE, {})
 
     verliezen = registreer_verliezen(history, frozen, engine, vandaag)
