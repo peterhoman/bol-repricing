@@ -1,21 +1,5 @@
 [
   {
-    "task": "morning",
-    "started": "2026-09-04T08:15:01",
-    "duration_s": 219,
-    "exit_code": 0,
-    "result": "ok",
-    "summary": [
-      "[CSV] upload van vandaag (05:42 UTC) - verse lijst",
-      "[MATCH] Checking 169 active EAN(s) for immediate price-matching...",
-      "[MATCH] Matched (undercut competitor): 168",
-      "[MATCH] Already winning (frozen now): 1",
-      "[MATCH] Hit minimum price floor: 130",
-      "[MATCH] Check failed: 9",
-      "[MATCH] No competitor (no active seller, exempt from daily reset): 8"
-    ]
-  },
-  {
     "task": "probe_start",
     "started": "2026-09-04T10:00:02",
     "duration_s": 119,
@@ -747,6 +731,22 @@
     "summary": [
       "[DONE] Frozen total now: 189 (+5 new, -1 unfrozen)",
       "[DONE] Big-gap total now: 0 (+0 new, -0 cleared)"
+    ]
+  },
+  {
+    "task": "morning",
+    "started": "2026-09-19T09:45:13",
+    "duration_s": 268,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[CSV] uploaddatum niet te bepalen (HTTPSConnectionPool(host='api.github.com', port=443): Max retries exceeded with url: /repos/peterhoman/bol-repricing/commits?path=bolcom_productinformatie.csv&per_page=1 (Caused by NameResolutionError(\"HTTPSConnection(host='api.github.com', port=443): Failed to resolve 'api.github.com' ([Errno 11001] getaddrinfo failed)\")))",
+      "[MATCH] Checking 189 active EAN(s) for immediate price-matching...",
+      "[MATCH] Matched (undercut competitor): 178",
+      "[MATCH] Already winning (frozen now): 11",
+      "[MATCH] Hit minimum price floor: 127",
+      "[MATCH] Check failed: 10",
+      "[MATCH] No competitor (no active seller, exempt from daily reset): 10"
     ]
   }
 ]
