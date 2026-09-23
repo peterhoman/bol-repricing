@@ -1,18 +1,5 @@
 [
   {
-    "task": "probe_start",
-    "started": "2026-09-08T10:00:01",
-    "duration_s": 153,
-    "exit_code": 0,
-    "result": "ok",
-    "summary": [
-      "[OPTIMIZE] 187 bevroren artikel(en) nakijken op echte concurrentprijzen...",
-      "[OPTIMIZE] verhoogd: 21 | met rust gelaten: 62 | geen concurrent: 34 | overgeslagen (concurrent niet aantoonbaar trager): 99 = levertijd onleesbaar 2 + even snel 60 + sneller 37 | mislukt: 5",
-      "[OPTIMIZE] opbrengst: EUR 67.84 per verkoopcyclus",
-      "[DONE] frozen.json bijgewerkt en feed getriggerd"
-    ]
-  },
-  {
     "task": "probe_check",
     "started": "2026-09-08T11:30:01",
     "duration_s": 1,
@@ -747,6 +734,16 @@
       "[MATCH] Hit minimum price floor: 131",
       "[MATCH] Check failed: 11",
       "[MATCH] No competitor (no active seller, exempt from daily reset): 11"
+    ]
+  },
+  {
+    "task": "probe_start",
+    "started": "2026-09-23T10:00:02",
+    "duration_s": 0,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[WINKEL DICHT] probe_start overgeslagen: winkel uit van 23-09 t/m 24-09 - sync zou alle bevroren artikelen ontdooien, optimize zou verhogen zonder koopblok. Bevroren prijzen blijven staan."
     ]
   }
 ]
