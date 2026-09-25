@@ -3,8 +3,8 @@
 Startdocument voor elke nieuwe chat op dit project. Oorspronkelijk
 geschreven bij de OneDrive-migratie van 25 juli, sindsdien bijgehouden.
 
-**Laatst bijgewerkt: 16 september 2026, 13:30** (vakantiepauze 25 sept t/m 2 okt
-gebouwd; meldafspraak: alleen bij bijzonderheden).
+**Laatst bijgewerkt: 25 september 2026, 08:15** (winkel weer aan; vakantie
+begint, pc uit, geen uploads tot za 3 okt).
 
 Wijzigingen in omgekeerde volgorde (nieuwste eerst): optimize-limiet 200 +
 tellersplitsing (3 sept), margeherstel op echte concurrentprijzen (1-2 sept,
@@ -65,6 +65,137 @@ bedoeling, geen storing. Bij de sync van 13:30 is een verlies per artikel
 te herleiden: de tabel `EAN / nu / wordt / erbij / reden` staat in
 `logs/automation-2026-09.log` (lokaal), online alleen de tellers.
 
+## ZA 19 SEPT: "78 nieuwe winnaars" = het BE-bestand belandde in de NL-opslag
+
+Peter uploadde za 19 sept twee keer: 10:36 (151 artikelen, 10 bevroren EAN's
+erin = normaal) en 10:42 (176 artikelen, waarvan **72 bevroren EAN's**; 76
+artikelen alleen in de tweede, 51 alleen in de eerste - dus een wezenlijk
+andere lijst, niet een correctie). De cloud-run van 12:37 vertrouwde de CSV
+en ontdooide alle 72 ("reappeared in today's CSV"). De sync van 13:30 keek
+live en vond dat 78 actieve artikelen het koopblok gewoon HADDEN: 68 van de
+72 opnieuw bevroren. Schade: 23 artikelen staan ~EUR1 lager (samen
+EUR19,89/cyclus; 1-2 stapjes van EUR0,50 tussen 12:37 en 13:38), 45 gelijk
+(stonden op de bodem), 4 niet teruggewonnen. Optimize haalt de
+vlak-onder-gevallen vanzelf terug (20 sept: 10 stuks).
+
+**Oorzaak bevestigd door Peter (20 sept):** de upload van 10:42 was het
+BE-bestand. Peter maakt elke ochtend eerst het NL-bestand, zet het op
+GitHub, gooit het weg, en maakt dan het BE-bestand - dat heeft DEZELFDE
+naam. Op 19 sept ging dat tweede bestand naar `bol-repricing` i.p.v.
+`bol-repricing-be` (BE meldde die avond dat het niets had gekregen). Het
+systeem kan het verschil niet zien: zelfde naam, zelfde vorm. Kenmerken
+achteraf: andere kolomindeling (257 i.p.v. 226), 100 van de 176 EAN's
+gedeeld, 72 van onze bevroren artikelen erin (de lijst waar Dreamhouse het
+koopblok NIET heeft). Deze vergissing kan dus terugkomen.
+
+Het systeem herstelde zichzelf binnen een uur, dankzij de live sync. Maar
+was de pc uit geweest (vakantie!), dan waren die 72 de hele week ontdooid
+gebleven en naar de bodem gezakt. **Voorstel, nog niet gebouwd (Peter
+beslist): een rem op de auto-ontdooiing - wil een nieuwe CSV in één run
+meer dan ~25 bevroren artikelen ontdooien, dan NIET ontdooien, een
+`[LET OP]` loggen, en de live sync laten beslissen.** Normaal zijn het er
+0-19 per dag (max gezien: 19 op 16 sept).
+
+**Besluit Peter (20 sept): NIET bouwen.** "Ik moet beter opletten." Niet
+opnieuw voorstellen tenzij het nog een keer gebeurt. Bij de ochtendcontrole
+wel blijven letten op een upload die ineens tientallen bevroren artikelen
+bevat of een afwijkende kolomindeling heeft - dan meteen melden.
+
+## DNS-HIK BIJ TAAKSTART (patroon herkend 19 sept) - nog niet opgelost
+
+Derde keer (1 sept 08:16, 3 sept 13:30, 19 sept 09:45): `getaddrinfo failed`
+op `api.github.com` in de EERSTE seconden van een taak, telkens bij een taak
+die een paar seconden tot een minuut te laat start (09:45:13, 08:16:04).
+**Oorzaak gemeten door BE (19 sept, Windows-logboek):** normaal wekt Windows
+de pc ~30 s VOOR een taak en is het netwerk op tijd. Het gaat alleen mis
+als de pc enkele seconden voor de taaktijd in slaap valt: dan wordt hij te
+laat gewekt (5/9 BE 14:16:25 = 85 s te laat; NL 1/9 08:16:05 en 19/9
+09:45:14) en doet het script zijn eerste verzoek voordat het netwerk op is.
+De pc "slaapt" bovendien nooit echt: hij valt dag en nacht ~elke 17 min in
+slaap en is 1,5 min later weer wakker (673x "Power Button" in 19 dagen,
+echte oorzaak niet uitgezocht). Een taak moet dus precies in zo'n slaapje
+vallen; daarom is het zeldzaam. BE had het 1x (5/9), NL 2x van de 7 keer dat
+een NL-taak de pc wekte. Mijn eerdere verklaring ("NL wekt de pc, BE lift
+mee") klopte dus niet: het treft beide, het is toeval van timing. Gevolg tot nu
+toe klein: alleen de `[CSV]`-datumcheck faalt (dan weten we niet of de lijst
+van vandaag is) of de eerste leespoging (retry vangt het op). Voorstel, nog
+niet gebouwd: `scheduled_run.py` wacht bij de start tot `api.github.com`
+te resolven is (max ~60 s) voordat het het script start. Peter beslist.
+
+Zaterdag 19 sept: Peter uploadde pas na 10:30 (uitgeslapen); snelstart van
+09:45 draaide op de lijst van vrijdag (178 gematcht, 11 bevroren). Laat
+uploaden blijft zinvol: de cloud pakt het bij de volgende run, de sync van
+13:30 werkt dan op de verse lijst.
+
+## MISLUKTE CLOUD-RUNS (meting 16 sept) en wat ermee gebeurt
+
+Laatste 14 dagen: 365 runs, 8 mislukt (2,2%), waarvan 7 in de laatste 6
+dagen. Oorzaken, per logboek nagekeken: 4x B-Living onbereikbaar ('s avonds
+15:41-23:02, 3x ondanks 7 pogingen/14 min), 2x GitHub-leesfout bij de
+preflight (10 s, één poging), 2x 409 door eigen uploads (opgelost met de
+Git-regels). Nooit een verkeerde prijs; alleen mails.
+
+**Peter heeft B-Living (Bas Bruggeman) gemaild, 16 sept:** de ophaler vanaf
+GitHub-servers krijgt sinds ~10 sept dagelijks 1-2x geen verbinding, soms
+8 min, terwijl de feed vanaf de eigen pc op hetzelfde moment wél werkt -
+vraag of hun hosting datacenter-verkeer begrenst of blokkeert. Bas doet
+navraag bij de hostingpartij. **Antwoord afwachten voordat er aan onze
+kant iets voor B-Living gebouwd wordt.**
+
+Voorstellen (nog niet gebouwd, Peter beslist):
+1. B-Living: terugvallen op de laatst bewaarde feed (op GitHub, max 6 uur
+   oud) als de server onbereikbaar is; anders stoppen zoals nu. Pas
+   zinvol als Bas het niet aan zijn kant oplost.
+2. Preflight: 3 pogingen met een paar seconden ertussen i.p.v. 1; de
+   veiligheidsstop zelf blijft.
+Niet doen: mails uitzetten of een stop als geslaagd laten doorgaan.
+
+## WINKEL DICHT 23-24 SEPT (Peter, 23 sept 08:30: "winkel staat 2 dagen uit")
+
+Live gecontroleerd 08:35: ons aanbod staat NIET meer in het prijsoverzicht
+van bol.com (3 van 3 bevroren artikelen: koopblok bij Sebic/Bohemian). Dat
+betekent voor het systeem:
+- `sync_buybox.py` zou bij ALLE ~190 bevroren artikelen "koopblok kwijt"
+  zien en ze in één keer ontdooien -> reset -> bodem. Alle vastgehouden
+  prijzen weg.
+- `optimize` zou verhogen zonder dat er een koopblok is; na heropening
+  registreert het geheugen dat als "verlies na verhoging" (verkeerde
+  plafonds).
+- **Een bol.com-export gemaakt terwijl de winkel uit staat, bevat ALLE
+  artikelen (ook de bevroren). De cloud kijkt niet live en zou ze bij de
+  dagwissel allemaal ontdooien. Dus: GEEN upload zolang de winkel uit
+  staat.** De upload van 23 sept 07:55 was nog goed (0 bevroren erin).
+
+**Gebouwd 23 sept 08:40 (lokaal actief vanaf de taak van 10:00):** in
+`scheduled_run.py` een venster `WINKEL_DICHT_VAN/TOT` (23-24 sept) waarin
+`probe_start` en `sync` worden overgeslagen met een `[WINKEL DICHT]`-regel
+in het log (lokaal en online). De snelstart draait door (verlaagt alleen,
+bevriest niets). Getest: 23-09 overgeslagen, 25-09 draait weer. **Peter (23 sept, 10:30, correctie): de winkel gaat waarschijnlijk al in het
+weekend van 26-27 sept op afstand weer aan** (bestelling dan -> uiterste
+leverdatum ~6-8 okt, haalbaar na terugkomst). Venster daarom 23-25 sept
+(`WINKEL_DICHT_TOT = 25 sept`), `VAKANTIE_TOT` terug op 2 okt; pc is vanaf
+de 25e toch uit. Eerder plan (tot 3 okt) is hiermee vervallen: (de
+B-Living-levering van 24 sept gaat nog naar klanten; met 4-8 dagen
+levertijd zou een bestelling nu een leverbelofte van 3 okt krijgen die niet
+haalbaar is - strike-risico). Venster daarom `WINKEL_DICHT_TOT = 3 okt`
+(en `VAKANTIE_TOT` gelijkgetrokken). **Plan:** geen enkele upload zolang
+de winkel uit staat; za 3 okt vroeg winkel aan + leverdatum controleren,
+GEEN upload (bol.com heeft uren nodig om koopblokken opnieuw toe te
+wijzen; een export van dat moment zou bevroren artikelen onnodig
+ontdooien); zo 4 okt 's ochtends de eerste verse upload; eerste sync zo 4
+okt 13:30 op die lijst. Strike geldt voor de UITERSTE leverdatum, die
+verschuift mee met het moment van aanzetten. Nog naar
+GitHub te pushen (na 13:40, buiten het taakvenster).
+
+**Vr 25 sept 08:00: Peter heeft bol.com weer AANGEZET** (uiterste
+leverdatum voor bestellingen van nu: wo 7 okt; B-Living komt ma 5 okt,
+inpakken en versturen diezelfde dag). Het [WINKEL DICHT]-venster liep t/m
+25 sept en heeft op 23 en 24 sept sync en optimize netjes overgeslagen (4x
+in het log). Vandaag: geen upload (winkel net aan, export nog niet
+betrouwbaar; en vakantie-afspraak), pc gaat uit. Eerste upload za 3 okt.
+
+Aansluitend: 25 sept t/m 2 okt vakantiepauze (optimize), pc uit.
+
 ## VAKANTIE 25 SEPT T/M 2 OKT (Peter, 16 sept) - wat er dan gebeurt
 
 Peter is weg van vr 25 sept t/m vr 2 okt. Op de 25e gaat er niets meer de
@@ -81,6 +212,15 @@ levertijd de oorzaak is). Verlagen, bevriezen, sync lopen door. Op 3 okt
 gaat het vanzelf weer aan. Stub-getest op 24-09 (normaal), 25-09, 28-09,
 02-10 (pauze), 03-10 (normaal). `[VAKANTIE]` staat in de prefix-lijst van
 `scheduled_run.py`. Instructie voor BE: `instructie-BE-vakantiepauze.md`.
+
+**Planning (Peter, 16 sept):** do 24 sept de LAATSTE upload, die dag draait
+alles normaal; vanaf vr 25 sept staat de pauze vanzelf aan; **tijdens de
+vakantie geen uploads**, bewust: zonder nieuwe export worden er geen
+bevroren artikelen auto-ontdooid, dus de bevroren prijzen blijven de hele
+week staan. De artikelen op de lijst van de 24e blijven wel hun normale
+dagcyclus doen (reset naar vol, EUR0,50-stappen omlaag) - dat is het
+gewone gedrag. Bij terugkomst (za 3 okt of later): pc aan, eerste upload,
+eerste sync ruimt de verloren koopblokken van die week in één keer op.
 
 **Wat "pc uit" betekent:** snelstart, optimize en sync draaien niet; alleen
 de cloud-cron (reset, EUR0,50-stappen, bevroren vasthouden, klemmen). Zonder
@@ -270,6 +410,21 @@ verlies zou ook op de oude prijs gebeurd zijn (hij zit onder onze bodem);
 de verhoging heeft 1-5 dagen extra marge gepakt. Het geheugen kent
 Kadootjeswinkel nu als laatst geziene concurrent bij alle 8, dus bij een
 volgend "geen concurrent" is het plafond 14,93 -> geen verhoging meer.
+
+### 16 sept (woensdag): 19 's nachts ontdooid door de cloud - niet door verhogingen
+
+Optimize: 2 verhoogd (geen concurrent), 0 verloren bij de sync, bevroren
+180. Maar de cloud-run van 08:02 (dagwissel) ontdooide **19** bevroren
+artikelen die in Peters export stonden: de Kadootjeswinkel-serie
+(084399/087529/089240/089721/089745), de Cammeraat-groep (8718483xxx,
+089677/089684/089691), toonies (094497) en een paar losse. Geen van de 19
+was recent verhoogd; het zijn de verkopers die met hun voorraad in en uit
+het koopblok flippen. Dagroute pakt ze terug zodra die verkoper weg is.
+
+**Les voor de ochtendcontrole:** niet alleen de verhogingen van gisteren
+naast de CSV leggen, maar ALLE bevroren artikelen tellen die in de CSV
+staan. Boven de ~10 op één nacht: even kijken welke verkopers, en of er
+verhoogde bij zitten. (Vandaag: 19, 0 verhoogd, bekende flippers.)
 
 ### 15 sept (dinsdag): dag 7 - stabiel
 
@@ -1739,6 +1894,9 @@ project gewerkt.
   10-euro-knik, en de bandcontrole over 87 bevroren artikelen gaf 0 boven
   de volle prijs en 0 onder de bodem. Geen reparatie nodig geweest.)
 
+- NL → BE: `...\bol-repricing\instructie-BE-winkel-dicht-en-vakantie.md` (23 sept:
+  winkel dicht 23-25 sept, heropening op afstand in het weekend, geen uploads,
+  het [WINKEL DICHT]-venster in scheduled_run.py; VERVANGT de instructie van 16 sept)
 - NL → BE: `...\bol-repricing\instructie-BE-vakantiepauze.md` (16 sept:
   verhogingen pauzeren 25 sept t/m 2 okt, en wat "pc uit" betekent)
 - NL → BE: `...\bol-repricing\antwoord-BE-levertijdregel-eerste-dag.md`

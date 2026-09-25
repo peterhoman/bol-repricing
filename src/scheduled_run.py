@@ -53,6 +53,19 @@ TASKS = {
     "sync":        ("sync_buybox.py", []),
 }
 
+# Winkel dicht (Peter, 23 sept): beide accounts uit tot za 3 okt (vakantie + leverbelofte). Als ons aanbod
+# niet op bol.com staat, ziet de sync bij ALLE bevroren artikelen "koopblok
+# kwijt" en ontdooit hij ze allemaal in een keer - daarna zakken ze naar de
+# bodem en zijn alle vastgehouden prijzen weg. Optimize zou intussen prijzen
+# verhogen die na heropening als "verlies na verhoging" in het geheugen
+# belanden. Daarom in dit venster: sync en optimize overslaan (met logregel),
+# de snelstart mag draaien (verlaagt alleen, bevriest niets). Na de laatste
+# dag gaat alles vanzelf weer aan. Datums aanpassen als Peter andere noemt.
+from datetime import date as _date
+WINKEL_DICHT_VAN = _date(2026, 9, 23)
+WINKEL_DICHT_TOT = _date(2026, 9, 25)   # winkel gaat in het weekend van 26-27 sept (op afstand) weer aan; pc is dan uit
+WINKEL_DICHT_TAKEN = ("probe_start", "sync")
+
 
 def github_headers():
     return {"Authorization": f"Bearer {os.getenv('GITHUB_TOKEN')}",
@@ -137,6 +150,18 @@ def run(task_name):
 
     script, args = TASKS[task_name]
     started = datetime.now()
+    if task_name in WINKEL_DICHT_TAKEN and WINKEL_DICHT_VAN <= started.date() <= WINKEL_DICHT_TOT:
+        regel = (f"[WINKEL DICHT] {task_name} overgeslagen: winkel uit van {WINKEL_DICHT_VAN:%d-%m} t/m "
+                 f"{WINKEL_DICHT_TOT:%d-%m} - sync zou alle bevroren artikelen ontdooien, optimize zou "
+                 f"verhogen zonder koopblok. Bevroren prijzen blijven staan.")
+        entry = {"task": task_name, "started": started.isoformat(timespec="seconds"), "duration_s": 0,
+                 "exit_code": 0, "result": "ok", "summary": [regel]}
+        LOG_DIR.mkdir(exist_ok=True)
+        with open(LOG_DIR / f"automation-{started:%Y-%m}.log", "a", encoding="utf-8") as fh:
+            fh.write(f"{chr(10)}{'='*70}{chr(10)}{entry['started']}  {task_name}  exit=0  0s{chr(10)}{'='*70}{chr(10)}{regel}{chr(10)}")
+        push_log_entry(entry)
+        print(regel)
+        return 0
     csv_note = csv_freshness_note() if task_name == "morning" else None
     cmd = [sys.executable, str(BASE / "src" / script)] + args
 
@@ -171,7 +196,7 @@ def run(task_name):
                    if ln.strip().startswith(("[MATCH]", "[DONE]", "[PROBE]", "[KEPT]",
                                              "[REVERTED]", "[AUTO]", "[ERROR]", "[STOP]",
                                              "[GEWEIGERD]", "[LET OP]", "[AUDIT]",
-                                             "[FLOOR]", "[WARN]", "[CSV]", "[OPTIMIZE]", "[VAKANTIE]", "TIMEOUT", "CRASH"))]
+                                             "[FLOOR]", "[WARN]", "[CSV]", "[OPTIMIZE]", "[VAKANTIE]", "[WINKEL DICHT]", "TIMEOUT", "CRASH"))]
 
     entry = {
         "task": task_name,
