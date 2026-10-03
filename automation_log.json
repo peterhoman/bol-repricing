@@ -1,21 +1,5 @@
 [
   {
-    "task": "morning",
-    "started": "2026-09-12T09:45:00",
-    "duration_s": 292,
-    "exit_code": 0,
-    "result": "ok",
-    "summary": [
-      "[CSV] upload van vandaag (06:10 UTC) - verse lijst",
-      "[MATCH] Checking 208 active EAN(s) for immediate price-matching...",
-      "[MATCH] Matched (undercut competitor): 180",
-      "[MATCH] Already winning (frozen now): 27",
-      "[MATCH] Hit minimum price floor: 124",
-      "[MATCH] Check failed: 13",
-      "[MATCH] No competitor (no active seller, exempt from daily reset): 11"
-    ]
-  },
-  {
     "task": "probe_start",
     "started": "2026-09-12T10:00:01",
     "duration_s": 129,
@@ -741,6 +725,19 @@
       "[MATCH] Hit minimum price floor: 143",
       "[MATCH] Check failed: 9",
       "[MATCH] No competitor (no active seller, exempt from daily reset): 10"
+    ]
+  },
+  {
+    "task": "probe_start",
+    "started": "2026-10-03T10:00:01",
+    "duration_s": 131,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[OPTIMIZE] 179 bevroren artikel(en) nakijken op echte concurrentprijzen...",
+      "[OPTIMIZE] verhoogd: 4 (vlak-onder-verkoper 4, trager 0, geen concurrent 0) | met rust gelaten: 23 | overgeslagen: 150 = nooit-verkoper 34 + even snel 38 + sneller 13 + onleesbaar 5 + cooldown 2 + geen conc. wacht 58 + geen conc. geblokkeerd 0 | mislukt: 2",
+      "[OPTIMIZE] opbrengst: EUR 1.89 per verkoopcyclus",
+      "[DONE] frozen.json bijgewerkt en feed getriggerd"
     ]
   }
 ]
