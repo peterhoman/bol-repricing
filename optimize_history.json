@@ -255,9 +255,9 @@
     "conc_prijs": 61.95,
     "conc_naam": "Bohemian Living NL",
     "laatst_verhoogd": "2026-10-03",
-    "verhoogd_naar": 59.92,
-    "verloren": "2026-09-22",
-    "verloren_op": 60.93
+    "verhoogd_naar": null,
+    "verloren": "2026-10-03",
+    "verloren_op": 59.92
   },
   "8716522107272": {
     "conc_gezien": "2026-10-03",
@@ -296,8 +296,10 @@
     "conc_prijs": 16.35,
     "conc_naam": "Pertina",
     "laatst_verhoogd": "2026-10-03",
-    "verhoogd_naar": 16.33,
-    "geen_conc_gezien": "2026-09-20"
+    "verhoogd_naar": null,
+    "geen_conc_gezien": "2026-09-20",
+    "verloren": "2026-10-03",
+    "verloren_op": 16.33
   },
   "8716522091380": {
     "geen_conc_gezien": "2026-10-03"
@@ -426,12 +428,12 @@
     "conc_naam": "Sebic - CAN-Interiors"
   },
   "8718483102327": {
-    "conc_gezien": "2026-09-22",
+    "conc_gezien": "2026-10-03",
     "conc_prijs": 18.95,
     "conc_naam": "Cammeraat"
   },
   "8716536203274": {
-    "conc_gezien": "2026-09-22",
+    "conc_gezien": "2026-10-03",
     "conc_prijs": 17.5,
     "conc_naam": "toonies-woondeco"
   },
@@ -499,7 +501,7 @@
     "conc_naam": "Sebic - CAN-Interiors"
   },
   "8718483140343": {
-    "conc_gezien": "2026-09-22",
+    "conc_gezien": "2026-10-03",
     "conc_prijs": 19.95,
     "conc_naam": "Cammeraat"
   },
@@ -596,7 +598,7 @@
     "conc_naam": "Woonuden-Damestas - Dierenlamp"
   },
   "8718483140367": {
-    "conc_gezien": "2026-09-22",
+    "conc_gezien": "2026-10-03",
     "conc_prijs": 19.95,
     "conc_naam": "Cammeraat"
   },
@@ -712,7 +714,7 @@
     "conc_naam": "Sebic - CAN-Interiors"
   },
   "8718483117949": {
-    "conc_gezien": "2026-09-22",
+    "conc_gezien": "2026-10-03",
     "conc_prijs": 19.95,
     "conc_naam": "Cammeraat"
   },
@@ -891,12 +893,12 @@
     "verloren_op": 44.36
   },
   "8717266051555": {
-    "conc_gezien": "2026-09-22",
+    "conc_gezien": "2026-10-03",
     "conc_prijs": 18.69,
     "conc_naam": "SpeelgoedbezorgdBorne"
   },
   "8717266051739": {
-    "conc_gezien": "2026-09-22",
+    "conc_gezien": "2026-10-03",
     "conc_prijs": 18.69,
     "conc_naam": "SpeelgoedbezorgdBorne"
   },
@@ -909,10 +911,10 @@
     "geen_conc_gezien": "2026-10-03"
   },
   "8014772133868": {
-    "geen_conc_gezien": "2026-09-22"
+    "geen_conc_gezien": "2026-10-03"
   },
   "8717266051821": {
-    "geen_conc_gezien": "2026-09-22",
+    "geen_conc_gezien": "2026-10-03",
     "laatst_verhoogd": "2026-09-19",
     "verhoogd_naar": 22.93
   },
@@ -971,7 +973,7 @@
     "conc_naam": "SpeelgoedbezorgdBorne"
   },
   "8716522081619": {
-    "conc_gezien": "2026-09-21",
+    "conc_gezien": "2026-10-03",
     "conc_prijs": 24.95,
     "conc_naam": "Hermana Living &amp; Design"
   },
@@ -1246,5 +1248,53 @@
     "conc_gezien": "2026-10-03",
     "conc_prijs": 44.5,
     "conc_naam": "LaSpada"
+  },
+  "8716522081770": {
+    "geen_conc_gezien": "2026-10-03"
+  },
+  "8716522081794": {
+    "geen_conc_gezien": "2026-10-03"
+  },
+  "8716522081831": {
+    "geen_conc_gezien": "2026-10-03"
+  },
+  "8716522081855": {
+    "geen_conc_gezien": "2026-10-03"
+  },
+  "8716522084870": {
+    "conc_gezien": "2026-10-03",
+    "conc_prijs": 31.95,
+    "conc_naam": "Boholifestylestore"
+  },
+  "8716522085709": {
+    "geen_conc_gezien": "2026-10-03"
+  },
+  "8716522090239": {
+    "conc_gezien": "2026-10-03",
+    "conc_prijs": 449.95,
+    "conc_naam": "Bohemian Living NL",
+    "laatst_verhoogd": "2026-10-03",
+    "verhoogd_naar": 449.93
+  },
+  "8716522113235": {
+    "conc_gezien": "2026-10-03",
+    "conc_prijs": 239.95,
+    "conc_naam": "Bohemian Living NL",
+    "laatst_verhoogd": "2026-10-03",
+    "verhoogd_naar": 239.93
+  },
+  "8716522062038": {
+    "conc_gezien": "2026-10-03",
+    "conc_prijs": 199.95,
+    "conc_naam": "Bohemian Living NL",
+    "laatst_verhoogd": "2026-10-03",
+    "verhoogd_naar": 199.93
+  },
+  "8716522090246": {
+    "conc_gezien": "2026-10-03",
+    "conc_prijs": 449.95,
+    "conc_naam": "Bohemian Living NL",
+    "laatst_verhoogd": "2026-10-03",
+    "verhoogd_naar": 449.93
   }
 }
