@@ -1,15 +1,5 @@
 [
   {
-    "task": "probe_check",
-    "started": "2026-09-11T11:30:01",
-    "duration_s": 1,
-    "exit_code": 0,
-    "result": "ok",
-    "summary": [
-      "[DONE] No probes currently in progress"
-    ]
-  },
-  {
     "task": "sync",
     "started": "2026-09-11T13:30:02",
     "duration_s": 469,
@@ -735,6 +725,17 @@
       "[MATCH] Hit minimum price floor: 126",
       "[MATCH] Check failed: 9",
       "[MATCH] No competitor (no active seller, exempt from daily reset): 10"
+    ]
+  },
+  {
+    "task": "sync",
+    "started": "2026-10-03T02:21:35",
+    "duration_s": 427,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[DONE] Frozen total now: 178 (+14 new, -31 unfrozen)",
+      "[DONE] Big-gap total now: 6 (+6 new, -0 cleared)"
     ]
   }
 ]
