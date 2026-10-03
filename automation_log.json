@@ -1,18 +1,5 @@
 [
   {
-    "task": "probe_start",
-    "started": "2026-09-11T10:00:01",
-    "duration_s": 146,
-    "exit_code": 0,
-    "result": "ok",
-    "summary": [
-      "[OPTIMIZE] 166 bevroren artikel(en) nakijken op echte concurrentprijzen...",
-      "[OPTIMIZE] verhoogd: 15 (vlak-onder-verkoper 0, trager 1, geen concurrent 14) | met rust gelaten: 65 | overgeslagen: 81 = nooit-verkoper 34 + even snel 34 + sneller 7 + onleesbaar 0 + cooldown 3 + geen conc. wacht 3 + geen conc. geblokkeerd 0 | mislukt: 5",
-      "[OPTIMIZE] opbrengst: EUR 64.12 per verkoopcyclus",
-      "[DONE] frozen.json bijgewerkt en feed getriggerd"
-    ]
-  },
-  {
     "task": "probe_check",
     "started": "2026-09-11T11:30:01",
     "duration_s": 1,
@@ -732,6 +719,22 @@
       "[OPTIMIZE] verhoogd: 2 (vlak-onder-verkoper 1, trager 1, geen concurrent 0) | met rust gelaten: 47 | overgeslagen: 135 = nooit-verkoper 31 + even snel 36 + sneller 12 + onleesbaar 5 + cooldown 0 + geen conc. wacht 51 + geen conc. geblokkeerd 0 | mislukt: 4",
       "[OPTIMIZE] opbrengst: EUR 5.65 per verkoopcyclus",
       "[DONE] frozen.json bijgewerkt en feed getriggerd"
+    ]
+  },
+  {
+    "task": "morning",
+    "started": "2026-10-03T02:21:35",
+    "duration_s": 233,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[CSV] upload van vandaag (00:19 UTC) - verse lijst",
+      "[MATCH] Checking 197 active EAN(s) for immediate price-matching...",
+      "[MATCH] Matched (undercut competitor): 183",
+      "[MATCH] Already winning (frozen now): 14",
+      "[MATCH] Hit minimum price floor: 126",
+      "[MATCH] Check failed: 9",
+      "[MATCH] No competitor (no active seller, exempt from daily reset): 10"
     ]
   }
 ]
