@@ -1,18 +1,5 @@
 [
   {
-    "task": "probe_start",
-    "started": "2026-09-13T10:00:01",
-    "duration_s": 125,
-    "exit_code": 0,
-    "result": "ok",
-    "summary": [
-      "[OPTIMIZE] 193 bevroren artikel(en) nakijken op echte concurrentprijzen...",
-      "[OPTIMIZE] verhoogd: 24 (vlak-onder-verkoper 0, trager 0, geen concurrent 24) | met rust gelaten: 64 | overgeslagen: 98 = nooit-verkoper 38 + even snel 42 + sneller 9 + onleesbaar 5 + cooldown 4 + geen conc. wacht 0 + geen conc. geblokkeerd 0 | mislukt: 7",
-      "[OPTIMIZE] opbrengst: EUR 84.03 per verkoopcyclus",
-      "[DONE] frozen.json bijgewerkt en feed getriggerd"
-    ]
-  },
-  {
     "task": "probe_check",
     "started": "2026-09-13T11:30:01",
     "duration_s": 1,
@@ -738,6 +725,16 @@
       "[OPTIMIZE] verhoogd: 19 (vlak-onder-verkoper 3, trager 0, geen concurrent 16) | met rust gelaten: 67 | overgeslagen: 97 = nooit-verkoper 34 + even snel 43 + sneller 12 + onleesbaar 5 + cooldown 2 + geen conc. wacht 1 + geen conc. geblokkeerd 0 | mislukt: 3",
       "[OPTIMIZE] opbrengst: EUR 77.96 per verkoopcyclus",
       "[DONE] frozen.json bijgewerkt en feed getriggerd"
+    ]
+  },
+  {
+    "task": "probe_check",
+    "started": "2026-10-04T11:30:01",
+    "duration_s": 1,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[DONE] No probes currently in progress"
     ]
   }
 ]
