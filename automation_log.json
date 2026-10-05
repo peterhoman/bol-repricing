@@ -1,15 +1,5 @@
 [
   {
-    "task": "probe_check",
-    "started": "2026-09-14T11:30:01",
-    "duration_s": 1,
-    "exit_code": 0,
-    "result": "ok",
-    "summary": [
-      "[DONE] No probes currently in progress"
-    ]
-  },
-  {
     "task": "sync",
     "started": "2026-09-14T13:30:01",
     "duration_s": 502,
@@ -736,6 +726,16 @@
       "[OPTIMIZE] verhoogd: 13 (vlak-onder-verkoper 0, trager 2, geen concurrent 11) | met rust gelaten: 78 | overgeslagen: 90 = nooit-verkoper 32 + even snel 39 + sneller 15 + onleesbaar 2 + cooldown 2 + geen conc. wacht 0 + geen conc. geblokkeerd 0 | mislukt: 1",
       "[OPTIMIZE] opbrengst: EUR 45.14 per verkoopcyclus",
       "[DONE] frozen.json bijgewerkt en feed getriggerd"
+    ]
+  },
+  {
+    "task": "probe_check",
+    "started": "2026-10-05T11:30:01",
+    "duration_s": 1,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[DONE] No probes currently in progress"
     ]
   }
 ]
