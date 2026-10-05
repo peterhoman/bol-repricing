@@ -196,6 +196,22 @@ betrouwbaar; en vakantie-afspraak), pc gaat uit. Eerste upload za 3 okt.
 
 Aansluitend: 25 sept t/m 2 okt vakantiepauze (optimize), pc uit.
 
+## MA 5 OKT 21:30-22:00: twee runs geannuleerd door een GITHUB-storing (niet B-Living)
+
+NL 21:30 en 21:42, BE 22:00, alle drie tegelijk. Oorzaak uit de annotaties
+van de job: **"The job was not acquired by Runner of type hosted even after
+multiple attempts"** - GitHub kon 15 minuten lang geen server toewijzen en
+annuleerde de job zelf (duur exact 15:02, nul stappen uitgevoerd). Ons
+script is niet eens gestart; er is niets gelezen of geschreven. Geen actie
+mogelijk of nodig. De workflow heeft zelf GEEN timeout-minutes.
+Les: bij een mislukte run zonder logregels (lege log-zip) de job-annotaties
+lezen: `/actions/runs/<id>/jobs` en `/check-runs/<job-id>/annotations`.
+
+**Let op 19 oktober 2026:** dezelfde annotaties melden dat `ubuntu-latest`
+vanaf die dag naar Ubuntu 26 migreert. De workflow gebruikt Python 3.11 via
+setup-python en alleen `requests` + `python-dotenv`, dus naar verwachting
+geen gevolgen - maar rond die datum de eerste runs nakijken.
+
 ## MA 5 OKT: ochtend-snelstart crashte op een aanbod zonder prijs - gerepareerd
 
 08:15 `morning` exit=1 na 183 s: `TypeError: float() argument must be a
