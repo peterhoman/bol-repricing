@@ -928,6 +928,17 @@ class RepricingEngine:
                     if c.get("gtin13") == ean:
                         offers = c.get("offers", {})
                         seller = offers.get("seller", {}).get("name", "")
+                        # Geen (bruikbare) prijs in de JSON-LD = geen bruikbare
+                        # check. Op 5 okt stond er bij één artikel een aanbod
+                        # zonder prijs; alle aanroepers doen float(price), dus
+                        # de hele ochtend-snelstart crashte op dat ene artikel
+                        # (TypeError) vóór de XML. Als mislukte check
+                        # teruggeven: dan slaan snelstart en sync alleen dit
+                        # artikel over, zoals bij elke andere mislukte check.
+                        try:
+                            float(offers.get("price"))
+                        except (TypeError, ValueError):
+                            return {"found": False, "error": "no price in JSON-LD"}
                         return {
                             "found": True,
                             "price": offers.get("price"),

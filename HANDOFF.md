@@ -3,8 +3,8 @@
 Startdocument voor elke nieuwe chat op dit project. Oorspronkelijk
 geschreven bij de OneDrive-migratie van 25 juli, sindsdien bijgehouden.
 
-**Laatst bijgewerkt: 25 september 2026, 08:15** (winkel weer aan; vakantie
-begint, pc uit, geen uploads tot za 3 okt).
+**Laatst bijgewerkt: 5 oktober 2026, 09:50** (snelstart-crash op aanbod zonder
+prijs gerepareerd en opnieuw gedraaid; push van phase2_repricing.py volgt).
 
 Wijzigingen in omgekeerde volgorde (nieuwste eerst): optimize-limiet 200 +
 tellersplitsing (3 sept), margeherstel op echte concurrentprijzen (1-2 sept,
@@ -20,7 +20,7 @@ Het systeem draait volledig automatisch. Peter uploadt 's ochtends het
 bestand (vóór 08:10 op werkdagen, vóór 09:40 in het weekend), verder niets.
 Begin elke sessie met `automation_log.json` via de Contents-API.
 
-Ruwe cijfers: ~150-200 producten per dagexport, 196 bevroren artikelen,
+Ruwe cijfers: ~150-200 producten per dagexport, 178 bevroren artikelen,
 cron 24 runs/dag, audit al weken schoon.
 
 ### De levertijdregel is bewezen op de scherpe rand (3 sept)
@@ -195,6 +195,44 @@ in het log). Vandaag: geen upload (winkel net aan, export nog niet
 betrouwbaar; en vakantie-afspraak), pc gaat uit. Eerste upload za 3 okt.
 
 Aansluitend: 25 sept t/m 2 okt vakantiepauze (optimize), pc uit.
+
+## MA 5 OKT: ochtend-snelstart crashte op een aanbod zonder prijs - gerepareerd
+
+08:15 `morning` exit=1 na 183 s: `TypeError: float() argument must be a
+string or a real number, not 'NoneType'` in `match_competitor_prices`
+(`competitor_price = float(result.get("price"))`). Eén artikel had op
+bol.com een aanbod zonder prijs in de JSON-LD; `check_buybox` gaf dan
+`found=True, price=None` en alle vier de aanroepers (2x snelstart, 2x sync)
+doen `float(price)`. De crash viel vóór de XML, dus er is niets verkeerds
+gepubliceerd; alleen de snelle ochtendmatch ontbrak.
+
+**Fix (09:42, centraal in `check_buybox`):** is de prijs niet naar een
+getal om te zetten, dan `{"found": False, "error": "no price in JSON-LD"}`.
+Snelstart en sync behandelen dat als een gewone mislukte check en slaan
+alleen dat artikel over. Getest op '19.95' (ongewijzigd), None en 'n.v.t.'
+(beide mislukte check). Snelstart daarna opnieuw gedraaid via de wrapper:
+09:42-09:47, 203 gematcht, 2 al winnend, 9 mislukt - klaar vóór de taak van
+10:00. De sync van 13:30 had op hetzelfde artikel ook gecrasht; dat is nu
+afgedekt. **`src/phase2_repricing.py` nog naar GitHub pushen (na 13:40).**
+
+Verder 4 okt: optimize 19 verhoogd (+EUR77,96; 16 bevestigde "geen
+concurrent"), 0 daarvan 's nachts verloren; sync 2 nieuw, 1 verloren,
+bevroren 183.
+
+## TERUG VAN VAKANTIE (za 3 okt, 02:20) - inhaalslag verliep schoon
+
+Vakantieweek cloud: 24 runs/dag, 1 mislukking (27 sept). Prijzen
+vastgehouden. Peter uploadde 3 okt 02:19 (NL-lijst, 170 artikelen, 25
+bevroren erin). Pc aan om 02:20: de taakplanner haalde ALLE gemiste taken
+van die dag tegelijk in (probe_check, probe_start, morning, sync, start
+02:21:35) - vier scrape-scripts naast elkaar, tegen de regel, maar zonder
+fouten of 409's. Uitkomst: optimize 2 verhoogd (51 "geen conc. wacht" =
+geheugen leeg na een week, eenmalig); morning 183 gematcht, 14 al winnend;
+**sync 14 nieuw, 31 ontdooid, bevroren 178**. De 31 zijn de verliezen van
+de week; veel ervan uit de "geen concurrent"-groep die op vol stond (Cactula
+e.d. terug op de pagina). Dagroute pakt ze terug. Verliezen zijn NIET aan
+verhogingen toegerekend (laatst_verhoogd > 3 dagen). Alles weer normaal
+vanaf zo 4 okt 09:45.
 
 ## VAKANTIE 25 SEPT T/M 2 OKT (Peter, 16 sept) - wat er dan gebeurt
 
