@@ -1,18 +1,5 @@
 [
   {
-    "task": "probe_start",
-    "started": "2026-09-18T10:00:01",
-    "duration_s": 35,
-    "exit_code": 0,
-    "result": "ok",
-    "summary": [
-      "[OPTIMIZE] 185 bevroren artikel(en) nakijken op echte concurrentprijzen...",
-      "[OPTIMIZE] verhoogd: 0 (vlak-onder-verkoper 0, trager 0, geen concurrent 0) | met rust gelaten: 0 | overgeslagen: 0 = nooit-verkoper 0 + even snel 0 + sneller 0 + onleesbaar 0 + cooldown 0 + geen conc. wacht 0 + geen conc. geblokkeerd 0 | mislukt: 185",
-      "[OPTIMIZE] opbrengst: EUR 0.00 per verkoopcyclus",
-      "[DONE] Niets te wijzigen"
-    ]
-  },
-  {
     "task": "probe_check",
     "started": "2026-09-18T11:30:01",
     "duration_s": 1,
@@ -736,6 +723,19 @@
       "[MATCH] Hit minimum price floor: 136",
       "[MATCH] Check failed: 9",
       "[MATCH] No competitor (no active seller, exempt from daily reset): 9"
+    ]
+  },
+  {
+    "task": "probe_start",
+    "started": "2026-10-09T10:00:01",
+    "duration_s": 159,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[OPTIMIZE] 192 bevroren artikel(en) nakijken op echte concurrentprijzen...",
+      "[OPTIMIZE] verhoogd: 4 (vlak-onder-verkoper 1, trager 0, geen concurrent 3) | met rust gelaten: 87 | overgeslagen: 99 = nooit-verkoper 29 + even snel 38 + sneller 14 + onleesbaar 3 + cooldown 2 + geen conc. wacht 13 + geen conc. geblokkeerd 0 | mislukt: 2",
+      "[OPTIMIZE] opbrengst: EUR 13.00 per verkoopcyclus",
+      "[DONE] frozen.json bijgewerkt en feed getriggerd"
     ]
   }
 ]
