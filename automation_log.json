@@ -1,21 +1,5 @@
 [
   {
-    "task": "morning",
-    "started": "2026-09-21T08:15:00",
-    "duration_s": 250,
-    "exit_code": 0,
-    "result": "ok",
-    "summary": [
-      "[CSV] upload van vandaag (04:52 UTC) - verse lijst",
-      "[MATCH] Checking 194 active EAN(s) for immediate price-matching...",
-      "[MATCH] Matched (undercut competitor): 189",
-      "[MATCH] Already winning (frozen now): 5",
-      "[MATCH] Hit minimum price floor: 133",
-      "[MATCH] Check failed: 9",
-      "[MATCH] No competitor (no active seller, exempt from daily reset): 10"
-    ]
-  },
-  {
     "task": "probe_start",
     "started": "2026-09-21T10:00:01",
     "duration_s": 150,
@@ -736,6 +720,22 @@
     "summary": [
       "[DONE] Frozen total now: 188 (+1 new, -1 unfrozen)",
       "[DONE] Big-gap total now: 0 (+0 new, -0 cleared)"
+    ]
+  },
+  {
+    "task": "morning",
+    "started": "2026-10-12T08:15:00",
+    "duration_s": 299,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[CSV] upload van vandaag (05:51 UTC) - verse lijst",
+      "[MATCH] Checking 204 active EAN(s) for immediate price-matching...",
+      "[MATCH] Matched (undercut competitor): 197",
+      "[MATCH] Already winning (frozen now): 7",
+      "[MATCH] Hit minimum price floor: 137",
+      "[MATCH] Check failed: 9",
+      "[MATCH] No competitor (no active seller, exempt from daily reset): 9"
     ]
   }
 ]
