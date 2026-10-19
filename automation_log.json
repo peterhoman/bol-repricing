@@ -1,17 +1,6 @@
 [
   {
     "task": "morning",
-    "started": "2026-10-05T08:15:00",
-    "duration_s": 183,
-    "exit_code": 1,
-    "result": "FAILED",
-    "summary": [
-      "[CSV] upload van vandaag (04:45 UTC) - verse lijst",
-      "[MATCH] Checking 205 active EAN(s) for immediate price-matching..."
-    ]
-  },
-  {
-    "task": "morning",
     "started": "2026-10-05T09:42:34",
     "duration_s": 277,
     "exit_code": 0,
@@ -747,6 +736,17 @@
     "result": "ok",
     "summary": [
       "[DONE] No probes currently in progress"
+    ]
+  },
+  {
+    "task": "sync",
+    "started": "2026-10-19T13:30:02",
+    "duration_s": 521,
+    "exit_code": 0,
+    "result": "ok",
+    "summary": [
+      "[DONE] Frozen total now: 196 (+4 new, -0 unfrozen)",
+      "[DONE] Big-gap total now: 0 (+0 new, -0 cleared)"
     ]
   }
 ]
