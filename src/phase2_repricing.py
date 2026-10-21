@@ -10,7 +10,7 @@ import time
 import base64
 import requests
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 sys.stdout.reconfigure(encoding='utf-8', line_buffering=True)
@@ -168,7 +168,7 @@ class RepricingEngine:
             response = self._get_with_retries(feed_url)
             if response.status_code != 200:
                 print(f"   Error: {response.status_code}")
-                return False
+                return self._load_bliving_cache(f"HTTP {response.status_code}")
 
             root = ET.fromstring(response.content)
 
@@ -184,10 +184,84 @@ class RepricingEngine:
                     pass
 
             print(f"   Loaded {len(self.bliving_klantprijzen)} klantprijzen from B-Living")
+            self._save_bliving_cache()
             return True
         except Exception as e:
             print(f"   Error: {e}")
+            return self._load_bliving_cache(str(e))
+
+    # --- Bewaarde feed als terugval (21 okt 2026, Peter: "ja bouw maar") ---
+    # Op 21 okt ging B-Living (en half Nederland) offline om een PHP-lek; elke
+    # run mislukte met "No klantprijzen loaded" en het hele systeem stond
+    # stil. Zolang hun site plat ligt kan hun inkoopprijs ook niet wijzigen,
+    # dus een bewaarde feed is dan net zo goed als een verse. Daarom: elke
+    # geslaagde run bewaart de feed op GitHub (hooguit elke CACHE_MIN_UREN
+    # uur, om commits te sparen), en lukt het ophalen niet, dan rekenen we
+    # met die kopie zolang hij jonger is dan CACHE_MAX_UREN. Ouder -> stoppen
+    # zoals voorheen (geen kostbasis = geen prijzen publiceren). De logregel
+    # "[FEED] B-Living onbereikbaar - bewaarde feed van ... gebruikt" maakt
+    # het zichtbaar in automation_log.json en het Actions-log.
+    BLIVING_CACHE_FILE = "bliving_cache.json"
+    CACHE_MAX_UREN = 72
+    CACHE_MIN_UREN = 6
+
+    def _bliving_cache_url(self):
+        repo = os.getenv("GITHUB_REPO")
+        return f"https://api.github.com/repos/{repo}/contents/{self.BLIVING_CACHE_FILE}" if repo else None
+
+    def _read_bliving_cache(self):
+        url = self._bliving_cache_url()
+        if not url:
+            return None
+        try:
+            headers = dict(self._fresh_headers(url))
+            token = os.getenv("GITHUB_TOKEN")
+            if token:
+                headers["Authorization"] = f"Bearer {token}"
+            r = requests.get(url, headers=headers, timeout=20)
+            if r.status_code != 200:
+                return None
+            return json.loads(r.text)
+        except Exception:
+            return None
+
+    def _save_bliving_cache(self):
+        try:
+            bestaand = self._read_bliving_cache()
+            if bestaand and bestaand.get("bewaard"):
+                leeftijd = datetime.now() - datetime.fromisoformat(bestaand["bewaard"])
+                if leeftijd < timedelta(hours=self.CACHE_MIN_UREN):
+                    return
+            data = {"bewaard": datetime.now().isoformat(timespec="seconds"),
+                    "aantal": len(self.bliving_klantprijzen),
+                    "klantprijzen": self.bliving_klantprijzen,
+                    "titels": self.bliving_titels}
+            if self.upload_json_to_github(data, self.BLIVING_CACHE_FILE):
+                print(f"   [FEED] bewaarde feed ververst ({len(self.bliving_klantprijzen)} klantprijzen)")
+        except Exception as e:
+            print(f"   [FEED] bewaarde feed niet ververst ({e}) - geen gevolg")
+
+    def _load_bliving_cache(self, reden):
+        cache = self._read_bliving_cache()
+        if not cache or not cache.get("klantprijzen"):
+            print(f"   [FEED] B-Living onbereikbaar ({reden}) en geen bewaarde feed - stoppen")
             return False
+        try:
+            bewaard = datetime.fromisoformat(cache["bewaard"])
+        except Exception:
+            print("   [FEED] bewaarde feed zonder bruikbare datum - stoppen")
+            return False
+        uren = (datetime.now() - bewaard).total_seconds() / 3600
+        if uren > self.CACHE_MAX_UREN:
+            print(f"   [FEED] B-Living onbereikbaar ({reden}); bewaarde feed van {bewaard:%d-%m %H:%M} is "
+                  f"{uren:.0f} uur oud (> {self.CACHE_MAX_UREN}) - stoppen")
+            return False
+        self.bliving_klantprijzen = {k: float(v) for k, v in cache["klantprijzen"].items()}
+        self.bliving_titels = dict(cache.get("titels", {}))
+        print(f"   [FEED] B-Living onbereikbaar ({reden}) - bewaarde feed van {bewaard:%d-%m %H:%M} gebruikt "
+              f"({uren:.0f} uur oud, {len(self.bliving_klantprijzen)} klantprijzen)")
+        print(f"   Loaded {len(self.bliving_klantprijzen)} klantprijzen from B-Living (bewaarde kopie)")
+        return True
 
     def is_excluded_from_big_steps(self, ean: str) -> bool:
         """

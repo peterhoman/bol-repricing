@@ -3,8 +3,8 @@
 Startdocument voor elke nieuwe chat op dit project. Oorspronkelijk
 geschreven bij de OneDrive-migratie van 25 juli, sindsdien bijgehouden.
 
-**Laatst bijgewerkt: 21 oktober 2026, 15:05** (retry ook op HTTP 5xx/429 na een
-503 van B-Living; instructie voor BE).
+**Laatst bijgewerkt: 21 oktober 2026, 16:45** (B-Living offline door landelijke
+PHP-storing; retry op 5xx én terugval op bewaarde feed gebouwd).
 
 Wijzigingen in omgekeerde volgorde (nieuwste eerst): optimize-limiet 200 +
 tellersplitsing (3 sept), margeherstel op echte concurrentprijzen (1-2 sept,
@@ -196,6 +196,23 @@ betrouwbaar; en vakantie-afspraak), pc gaat uit. Eerste upload za 3 okt.
 
 Aansluitend: 25 sept t/m 2 okt vakantiepauze (optimize), pc uit.
 
+## WO 21 OKT, 16:45: BEWAARDE B-LIVING-FEED ALS TERUGVAL (Peter: "ja bouw maar, ook aan BE")
+
+Aanleiding: landelijke PHP-storing, B-Living offline, elke run mislukt,
+hele systeem stil. Gebouwd in `phase2_repricing.py` bij `load_bliving_feed`:
+- geslaagde run -> `bliving_cache.json` op GitHub (hooguit elke 6 uur:
+  `CACHE_MIN_UREN`), inhoud `bewaard`/`aantal`/`klantprijzen`/`titels`;
+- mislukt ophalen (na de retries) -> kopie lezen via de Contents-API en
+  gebruiken als die jonger is dan 72 uur (`CACHE_MAX_UREN`), met logregel
+  `[FEED] B-Living onbereikbaar (...) - bewaarde feed van <tijd> gebruikt`;
+  anders stoppen zoals voorheen.
+Waarom veilig: zolang B-Living's site plat ligt kan hun inkoopprijs niet
+wijzigen. Offline getest op zes gevallen (alle goed). Geldt ook voor de
+lokale taken (zelfde lader). **Er is nog GEEN kopie**: die ontstaat bij de
+eerste geslaagde run na de storing; de terugval helpt dus pas bij een
+volgende storing. Niet handmatig vullen (de echte kostbasis staat nergens
+anders). Instructie voor BE: `instructie-BE-bewaarde-feed.md`.
+
 ## WO 21 OKT: B-Living gaf een 503 - retry nu ook op 5xx/429 (Peter: "ja bouw maar")
 
 14:49 NL en BE tegelijk "Run failed": B-Living antwoordde HTTP 503 (server
@@ -206,7 +223,24 @@ geprobeerd met dezelfde verdubbelende wachttijden; andere statuscodes
 (404 enz.) direct terug; na 7x 5xx krijgt de aanroeper de laatste response
 en stopt de run zoals voorheen. Offline getest op vier reeksen (503,503,200
 -> 200; 7x503 -> 503; 404 direct; verbinding,503,200 -> 200). Instructie
-voor BE: `instructie-BE-retry-op-503.md`. Status 14-21 okt verder: alle
+voor BE: `instructie-BE-retry-op-503.md`.
+
+**Vervolg 21 okt 16:00: dit is een ECHTE B-Living-storing.** De feed gaf
+ook vanaf deze pc HTTP 503 (1 kB foutpagina). Eerste cloud-run met de
+nieuwe retry (15:41): 7 pogingen, 10,5 min, allemaal 503 - werkt zoals
+bedoeld, en toch mislukt. Zolang B-Living plat ligt mislukt ELKE cloud-run
+(tot 24 mails/dag); de prijzen op GitHub blijven op de laatste goede versie
+(13:38), bevroren blijft staan, niets zakt. Geen schade, wel stilstand.
+Als dit langer dan een dag duurt: de terugval op de laatst bewaarde feed
+(voorstel 1 van 16 sept) wordt dan wél relevant - Peter beslist.
+**Oorzaak (Peter, 16:30):** landelijk - "Grote Nederlandse websites offline
+uit angst voor hacks vanwege weerloos PHP" (NU.nl, 21 okt). B-Living toont
+"Website temporarily unavailable - urgent maintenance". Kan uren tot dagen
+duren. Zolang het duurt: cloud-runs mislukken (mails), en ook de lokale
+taken (snelstart/optimize/sync laden de feed) eindigen met "No klantprijzen
+loaded" - alles staat veilig stil. Opmerking: zolang B-Living's site plat
+ligt kan hun inkoopprijs ook niet wijzigen, dus een bewaarde feed is in
+deze situatie net zo goed als een verse. Status 14-21 okt verder: alle
 taken elke dag ok, cloud 26/dag, geen B-Living-uitval meer sinds de
 vakantie, bevroren 190-198, 19 okt (Ubuntu 26-wissel) zonder gevolgen.
 
@@ -1962,6 +1996,8 @@ project gewerkt.
   10-euro-knik, en de bandcontrole over 87 bevroren artikelen gaf 0 boven
   de volle prijs en 0 onder de bodem. Geen reparatie nodig geweest.)
 
+- NL → BE: `...\bol-repricing\instructie-BE-bewaarde-feed.md` (21 okt:
+  terugvallen op de laatst bewaarde B-Living-feed, max 72 uur oud)
 - NL → BE: `...\bol-repricing\instructie-BE-retry-op-503.md` (21 okt:
   feed-download ook opnieuw proberen bij HTTP 5xx/429)
 - NL → BE: `...\bol-repricing\instructie-BE-winkel-dicht-en-vakantie.md` (23 sept:
