@@ -3,8 +3,8 @@
 Startdocument voor elke nieuwe chat op dit project. Oorspronkelijk
 geschreven bij de OneDrive-migratie van 25 juli, sindsdien bijgehouden.
 
-**Laatst bijgewerkt: 5 oktober 2026, 09:50** (snelstart-crash op aanbod zonder
-prijs gerepareerd en opnieuw gedraaid; push van phase2_repricing.py volgt).
+**Laatst bijgewerkt: 21 oktober 2026, 15:05** (retry ook op HTTP 5xx/429 na een
+503 van B-Living; instructie voor BE).
 
 Wijzigingen in omgekeerde volgorde (nieuwste eerst): optimize-limiet 200 +
 tellersplitsing (3 sept), margeherstel op echte concurrentprijzen (1-2 sept,
@@ -195,6 +195,20 @@ in het log). Vandaag: geen upload (winkel net aan, export nog niet
 betrouwbaar; en vakantie-afspraak), pc gaat uit. Eerste upload za 3 okt.
 
 Aansluitend: 25 sept t/m 2 okt vakantiepauze (optimize), pc uit.
+
+## WO 21 OKT: B-Living gaf een 503 - retry nu ook op 5xx/429 (Peter: "ja bouw maar")
+
+14:49 NL en BE tegelijk "Run failed": B-Living antwoordde HTTP 503 (server
+overbelast/onderhoud). `_get_with_retries` probeerde alleen opnieuw bij een
+verbindingsfout; een 503 kwam als gewone response terug en de run stopte
+direct. **Gebouwd 21 okt 15:05:** 5xx en 429 worden nu ook opnieuw
+geprobeerd met dezelfde verdubbelende wachttijden; andere statuscodes
+(404 enz.) direct terug; na 7x 5xx krijgt de aanroeper de laatste response
+en stopt de run zoals voorheen. Offline getest op vier reeksen (503,503,200
+-> 200; 7x503 -> 503; 404 direct; verbinding,503,200 -> 200). Instructie
+voor BE: `instructie-BE-retry-op-503.md`. Status 14-21 okt verder: alle
+taken elke dag ok, cloud 26/dag, geen B-Living-uitval meer sinds de
+vakantie, bevroren 190-198, 19 okt (Ubuntu 26-wissel) zonder gevolgen.
 
 ## MA 5 OKT 21:30-22:00: twee runs geannuleerd door een GITHUB-storing (niet B-Living)
 
@@ -1948,6 +1962,8 @@ project gewerkt.
   10-euro-knik, en de bandcontrole over 87 bevroren artikelen gaf 0 boven
   de volle prijs en 0 onder de bodem. Geen reparatie nodig geweest.)
 
+- NL → BE: `...\bol-repricing\instructie-BE-retry-op-503.md` (21 okt:
+  feed-download ook opnieuw proberen bij HTTP 5xx/429)
 - NL → BE: `...\bol-repricing\instructie-BE-winkel-dicht-en-vakantie.md` (23 sept:
   winkel dicht 23-25 sept, heropening op afstand in het weekend, geen uploads,
   het [WINKEL DICHT]-venster in scheduled_run.py; VERVANGT de instructie van 16 sept)

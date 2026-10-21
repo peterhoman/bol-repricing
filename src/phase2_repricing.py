@@ -78,17 +78,33 @@ class RepricingEngine:
         minutes apart, so the longest chain still can never overlap the
         next run; never push this past ~20 minutes.
         """
+        # Ook opnieuw proberen bij een NETTE foutmelding van de server die
+        # vrijwel altijd tijdelijk is: 5xx (server overbelast/onderhoud) en
+        # 429 (te veel verzoeken). Op 21 okt gaf B-Living een 503; dat kwam
+        # hier terug als een gewone response, de aanroeper zag "!= 200" en de
+        # run stopte zonder ook maar een keer te wachten - terwijl zo'n 503
+        # meestal binnen een minuut voorbij is. Een 404 of andere 4xx is geen
+        # storing en wordt direct teruggegeven. (Peter, 21 okt: "ja bouw maar".)
+        RETRY_STATUSES = {429, 500, 502, 503, 504}
         last_exception = None
+        last_response = None
         wait = backoff
         for attempt in range(1, retries + 1):
             try:
-                return requests.get(url, timeout=timeout, headers=self._fresh_headers(url))
+                response = requests.get(url, timeout=timeout, headers=self._fresh_headers(url))
+                if response.status_code not in RETRY_STATUSES:
+                    return response
+                last_response = response
+                reden = f"HTTP {response.status_code}"
             except requests.exceptions.RequestException as e:
                 last_exception = e
-                if attempt < retries:
-                    print(f"   Attempt {attempt}/{retries} failed ({e}), retrying in {wait}s...")
-                    time.sleep(wait)
-                    wait *= 2
+                reden = str(e)
+            if attempt < retries:
+                print(f"   Attempt {attempt}/{retries} failed ({reden}), retrying in {wait}s...")
+                time.sleep(wait)
+                wait *= 2
+        if last_response is not None:
+            return last_response      # aanroeper ziet status != 200 en stopt netjes
         raise last_exception
 
     def load_products(self):
