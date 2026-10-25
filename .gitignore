@@ -17,3 +17,6 @@ env/
 
 # werkbestanden van de scripts (13 MB, o.a. uitvoer van 1 juli) - niet in de opslagplaats
 output/
+
+# bodemprijzen - NIET openbaar maken (repo is publiek; concurrenten zouden onze laagste prijzen zien)
+bodemprijs_lijst_*.csv
