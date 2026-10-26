@@ -41,9 +41,17 @@ Na het maken van de trigger(s), vóór `Register-ScheduledTask`:
 
 ```powershell
     foreach ($tr in $trigger) {
-        $tr.StartBoundary = ([datetime]$tr.StartBoundary).ToString("yyyy-MM-dd'T'HH:mm:ss")
+        $start = [datetime]$tr.StartBoundary
+        if ($start -lt (Get-Date)) { $start = $start.AddDays(1) }
+        $tr.StartBoundary = $start.ToString("yyyy-MM-dd'T'HH:mm:ss")
     }
 ```
+
+De regel met `AddDays(1)`: ligt de tijd van vandaag al achter ons, dan pas
+morgen beginnen. Anders kan `-StartWhenAvailable` de "gemiste" run meteen
+na het registreren alsnog starten (bij NL had dat optimize een tweede keer
+op dezelfde dag kunnen geven). Getest om 16:13: 08:15 en 13:30 beginnen
+morgen, 23:59 nog vandaag.
 
 (`$trigger` moet dan een lijst zijn: bij NL `@(New-ScheduledTaskTrigger -Daily -At $t.Tijd)`.)
 Getest: zonder dit `2026-10-26T09:00:00Z`, met dit `2026-10-26T10:00:00`.

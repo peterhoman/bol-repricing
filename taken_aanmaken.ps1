@@ -48,8 +48,13 @@ foreach ($t in $taken) {
     # dagelijkse taken na de wintertijd een uur te vroeg liepen (optimize
     # 09:00, sync 12:30; optimize botste zo met BE's snelstart van 09:00).
     # Zonder tijdzone volgt Windows de gewone klok. Dus: tijdzone eraf.
+    # Ligt de tijd van vandaag al achter ons, dan pas morgen beginnen: anders
+    # kan -StartWhenAvailable de "gemiste" run meteen na het registreren
+    # alsnog starten (bv. optimize een tweede keer op dezelfde dag).
     foreach ($tr in $trigger) {
-        $tr.StartBoundary = ([datetime]$tr.StartBoundary).ToString("yyyy-MM-dd'T'HH:mm:ss")
+        $start = [datetime]$tr.StartBoundary
+        if ($start -lt (Get-Date)) { $start = $start.AddDays(1) }
+        $tr.StartBoundary = $start.ToString("yyyy-MM-dd'T'HH:mm:ss")
     }
     # -WakeToRun: haalt de pc uit de slaapstand voor deze taak
     # -StartWhenAvailable: draait alsnog als het tijdstip gemist werd (pc was uit)
