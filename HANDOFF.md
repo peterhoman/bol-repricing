@@ -3,8 +3,8 @@
 Startdocument voor elke nieuwe chat op dit project. Oorspronkelijk
 geschreven bij de OneDrive-migratie van 25 juli, sindsdien bijgehouden.
 
-**Laatst bijgewerkt: 21 oktober 2026, 16:45** (B-Living offline door landelijke
-PHP-storing; retry op 5xx én terugval op bewaarde feed gebouwd).
+**Laatst bijgewerkt: 26 oktober 2026, 08:30** (wintertijd in de cron; openbare
+repo: inkoopprijzen staan in de Channable-feed, omzetting als klusje voor later).
 
 Wijzigingen in omgekeerde volgorde (nieuwste eerst): optimize-limiet 200 +
 tellersplitsing (3 sept), margeherstel op echte concurrentprijzen (1-2 sept,
@@ -212,6 +212,12 @@ lokale taken (zelfde lader). **Er is nog GEEN kopie**: die ontstaat bij de
 eerste geslaagde run na de storing; de terugval helpt dus pas bij een
 volgende storing. Niet handmatig vullen (de echte kostbasis staat nergens
 anders). Instructie voor BE: `instructie-BE-bewaarde-feed.md`.
+
+**Afloop 21 okt:** B-Living weer online rond 17:00 (storing ~14:45-17:00,
+8 mislukte cloud-runs). Run 17:04 slaagde en schreef meteen de eerste
+kopie: `bliving_cache.json`, bewaard 2026-10-21T15:04:47, 5397
+klantprijzen, 482 kB. Vanaf nu is een B-Living-storing tot 72 uur
+overbrugd.
 
 ## WO 21 OKT: B-Living gaf een 503 - retry nu ook op 5xx/429 (Peter: "ja bouw maar")
 
@@ -1016,6 +1022,79 @@ worden via de Contents API. Gebruik daar NIET `setup_upload.py` voor: dat
 uploadt ook de lokale statusbestanden, die hier vaak lege stubs zijn, en
 wist daarmee de live status.
 
+## OPENBARE REPO EN GEVOELIGE GEGEVENS (25 okt, opruimverzoek centrale chat) - OPEN
+
+De repo `peterhoman/bol-repricing` is **openbaar** (moet zo blijven: Channable
+leest de feed, en Actions-minuten zijn gratis voor publieke repo's).
+Gecontroleerd 25 okt: geen GitHub-token of andere sleutel in HANDOFF.md,
+STATUS.md of de scripts. Wel openbaar en gevoelig:
+1. **De B-Living-feedlink met toegangscode** staat in
+   `src/phase2_repricing.py` (sinds juni). Daarmee kan iedereen B-Livings
+   dealerfeed met alle inkoopprijzen (klantprijs) downloaden.
+2. **`bliving_cache.json`** (gebouwd 21 okt, de terugval bij een
+   B-Living-storing) zet alle ~5.400 inkoopprijzen direct leesbaar in de
+   repo (11 versies, zonder inloggen op te vragen). Dat was een fout bij het
+   bouwen: niet gecontroleerd of de repo openbaar was.
+3. HANDOFF.md (openbaar sinds 12 sept) bevat 175 bedragen, 41 EAN's,
+   bodemprijzen en de prijsformules.
+Met inkoopprijs + formule (ook in de code) is elke bodemprijs uit te
+rekenen; alleen de bodemprijslijst uitsluiten lost het dus niet op.
+**Gedaan:** `bodemprijs_lijst_*.csv` in `.gitignore`.
+**Voorgesteld aan Peter, wacht op besluit:** (a) Bas om een nieuwe
+feedlink vragen en die als GitHub-secret + in .env zetten i.p.v. in de
+code; (b) `bliving_cache.json` versleuteld opslaan (sleutel als secret) of
+uit de repo halen; (c) of HANDOFF.md openbaar blijft. Oude versies blijven
+in de git-geschiedenis staan - die herschrijven = force-push, verboden.
+Verder voorgesteld: de vijf oude scripts (`main.py`, `phase2.py`, `db.py`,
+`bol_api.py`, `repricing.py`) verwijderen - niet gebruikt: de taakplanner
+start `match_prices`/`probe_recovery`/`sync_buybox`, de cloud
+`github_action_reprice`; de vijf gebruiken alleen elkaar. Kopie staat in
+`..\bol-repricing-kopie-12sept`. STATUS.md: op 12 sept besloot Peter hem
+niet vast te leggen (verouderd); niet vastgelegd, voorgelegd.
+
+**26 okt - belangrijkste vondst, bouw GESTOPT:** Peter gaf akkoord om de
+feedlink naar een secret te verplaatsen en de bewaarde feed te versleutelen
+(Bas om een nieuwe link vragen: NEE, Bas heeft het te druk; Peter dacht
+eerst dat de feed alleen met inloggen bereikbaar is - getest: de link werkt
+zonder inloggen). Gebouwd en getest in een KOPIE (scratchpad,
+`patch_geheim.py` + `test_geheim.py`, 7 van 8 tests goed), niet in het
+project. Toen bleek: `generate_reprice_xml` downloadt de hele B-Living-feed
+en publiceert hem als `repricing_current.xml` - de Channable-feed, die
+openbaar MOET zijn. Gemeten: in die openbare feed is de klantprijs voor
+5.068 van 5.381 producten (94%) exact B-Livings inkoopprijs (de rest is
+door ons omgerekend). Channable rekent de verkoopprijs uit die klantprijs.
+Dus zolang Channable de klantprijs leest, zijn alle inkoopprijzen openbaar,
+en voegen link-verbergen en cache-versleutelen vrijwel niets toe. Echte
+oplossing zou zijn: verkoopprijs i.p.v. klantprijs publiceren en de
+prijsregel in Channable aanpassen (grotere wijziging, raakt alle ~5.400
+prijzen op bol.com). Voorgelegd aan Peter; niets aan het project gewijzigd.
+Ook BE heeft vermoedelijk dezelfde opzet.
+
+**Wintertijd:** Peter akkoord 26 okt; alle 24 UTC-uren in `reprice.yml` +1
+(zie "Zomer/wintertijd" onder "Over de cron"). Instructie voor BE:
+`instructie-BE-wintertijd.md`.
+
+## KLUSJE VOOR LATER: verkoopprijs i.p.v. inkoopprijs in de Channable-feed
+
+Besloten 26 okt (Peter, na de vondst hierboven): NU NIETS doorvoeren, maar
+als apart klusje inplannen. Probleem: `repricing_current.xml` (openbaar,
+moet openbaar blijven voor Channable) bevat voor 94% van de producten
+B-Livings exacte inkoopprijs als klantprijs, omdat Channable daaruit de
+verkoopprijs rekent (klantprijs x 2,4 + 8, met de knik onder 4). Oplossing:
+het script rekent de verkoopprijs zelf uit en zet die in een prijsveld; in
+Channable wordt de prijsregel "neem dit veld over". Dan bevat de openbare
+feed geen inkoopprijzen meer. Aanpak, in deze volgorde:
+1. Eerst een proef op een paar artikelen (Channable kan een regel per
+   product of per selectie toepassen): controleren dat de prijs op bol.com
+   exact gelijk blijft.
+2. Pas daarna het hele assortiment omzetten.
+3. BE (Dreamhouse) heeft vermoedelijk dezelfde opzet; zelfde aanpak, via
+   een instructiedocument.
+Pas daarna hebben link-verbergen en cache-versleutelen zin (staat klaar
+en getest in de scratchpad van de chat van 26 okt: `patch_geheim.py`,
+`test_geheim.py`; let op: de feedlink staat op TWEE plekken in
+`phase2_repricing.py`, ook in `generate_reprice_xml`).
+
 ## GIT-REGELS (12 september, Peter) - LEES DIT VOOR JE IETS VASTLEGT
 
 Sinds 12 sept hangt deze map aan de tak `main` van GitHub (daarvoor stond
@@ -1048,7 +1127,7 @@ schrijft daar zijn status heen (`frozen.json`, `state.json`, `big_gap.json`,
    opnieuw pushen. Nooit overschrijven.
 
 Wat bewust NIET in de opslagplaats staat (blijft alleen lokaal, en in de
-kopie `..ol-repricing-kopie-12sept`): `.env` (sleutels), `bol_repricing.db`,
+kopie `..\bol-repricing-kopie-12sept`): `.env` (sleutels), `bol_repricing.db`,
 `STATUS.md` en `bodemprijs_lijst_22juli.csv` (juni/juli, achterhaald),
 `output/` (werkbestanden, in `.gitignore`), en de vijf oude scripts
 `src/main.py`, `phase2.py`, `db.py`, `bol_api.py`, `repricing.py` (opzet van
@@ -1460,11 +1539,15 @@ langer dan 45 minuten stil is. **Die is bewust NIET ingepland**, omdat de
 dagtotalen goed zijn en extra runs alleen ruis toevoegen. Alleen inzetten
 als een dag daadwerkelijk ver onder de 24 eindigt.
 
-**Wintertijd, eind oktober:** Channable's slots staan in Amsterdamse tijd
-en schuiven vanzelf mee. Onze cron staat in UTC en doet dat NIET. Alle 24
-tijden moeten dan een uur terug, anders draaien de runs 55 minuten vóór
-het slot in plaats van 5 minuten erna en importeert Channable structureel
-een verouderde prijs.
+**Zomer/wintertijd:** Channable's slots staan in Amsterdamse tijd en
+schuiven vanzelf mee. Onze cron staat in UTC en doet dat NIET. Regel:
+UTC-uur = Amsterdams label min de offset (winter 1, zomer 2). Dus bij de
+wintertijd alle UTC-UREN +1, bij de zomertijd alle UTC-uren -1. (Hier en in
+de workflow stond eerder "een uur terug" voor de herfst: dat was verkeerd
+om.) **Gedaan op 26 okt 2026** (wintertijd). **Volgende keer: zondag 28
+maart 2027** (zomertijd) - alle 24 UTC-uren -1, controle: UTC+2 = label.
+Wie het vergeet: de runs lopen dan een uur achter op Channable; geen
+verkeerde prijzen, alleen trager.
 
 ## Onderzoek 31 juli: de grens van wat prijs kan (BEWUST NIETS AAN GEDAAN)
 
@@ -1996,6 +2079,8 @@ project gewerkt.
   10-euro-knik, en de bandcontrole over 87 bevroren artikelen gaf 0 boven
   de volle prijs en 0 onder de bodem. Geen reparatie nodig geweest.)
 
+- NL → BE: `...\bol-repricing\instructie-BE-wintertijd.md` (26 okt:
+  cron-uren +1 voor de wintertijd, met de juiste rekenregel)
 - NL → BE: `...\bol-repricing\instructie-BE-bewaarde-feed.md` (21 okt:
   terugvallen op de laatst bewaarde B-Living-feed, max 72 uur oud)
 - NL → BE: `...\bol-repricing\instructie-BE-retry-op-503.md` (21 okt:
