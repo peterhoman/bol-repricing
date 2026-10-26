@@ -1048,8 +1048,8 @@ in de git-geschiedenis staan - die herschrijven = force-push, verboden.
 Verder voorgesteld: de vijf oude scripts (`main.py`, `phase2.py`, `db.py`,
 `bol_api.py`, `repricing.py`) verwijderen - niet gebruikt: de taakplanner
 start `match_prices`/`probe_recovery`/`sync_buybox`, de cloud
-`github_action_reprice`; de vijf gebruiken alleen elkaar. Kopie staat in
-`..\bol-repricing-kopie-12sept`. STATUS.md: op 12 sept besloot Peter hem
+`github_action_reprice`; de vijf gebruiken alleen elkaar. De kopie
+`..\bol-repricing-kopie-12sept` staat sinds 26 okt in de Prullenbak (Peter akkoord; eerst alle 27 bestanden vergeleken). STATUS.md: op 12 sept besloot Peter hem
 niet vast te leggen (verouderd); niet vastgelegd, voorgelegd.
 
 **26 okt - belangrijkste vondst, bouw GESTOPT:** Peter gaf akkoord om de
@@ -1127,7 +1127,7 @@ schrijft daar zijn status heen (`frozen.json`, `state.json`, `big_gap.json`,
    opnieuw pushen. Nooit overschrijven.
 
 Wat bewust NIET in de opslagplaats staat (blijft alleen lokaal, en in de
-kopie `..\bol-repricing-kopie-12sept`): `.env` (sleutels), `bol_repricing.db`,
+kopie `..\bol-repricing-kopie-12sept`, sinds 26 okt in de Prullenbak): `.env` (sleutels), `bol_repricing.db`,
 `STATUS.md` en `bodemprijs_lijst_22juli.csv` (juni/juli, achterhaald),
 `output/` (werkbestanden, in `.gitignore`), en de vijf oude scripts
 `src/main.py`, `phase2.py`, `db.py`, `bol_api.py`, `repricing.py` (opzet van
@@ -1562,6 +1562,17 @@ script opnieuw draaien (rechtsklik > Uitvoeren met PowerShell); de controle
 onderaan toont dan tijden zonder `+01:00`/`Z`. Daarna hoeft de taakplanner
 bij zomer/wintertijd nooit meer aangepast. Instructie voor BE:
 `instructie-BE-taakplanner-wintertijd.md`.
+**Uitgevoerd 26 okt 16:30:** "Run with PowerShell" (rechtsklik) werkt op
+deze pc NIET: het venster gaat direct dicht zonder iets te doen (in het
+register staat onder HKCU een lege `.ps1`-koppeling; niet aangepast, is een
+Windows-instelling). Na Peters "ja" heeft de chat het script zelf gedraaid
+via de PowerShell-tool, met `function pause {}` ervoor zodat de `pause`
+aan het eind niet blijft hangen. Resultaat: starttijden zonder tijdzone,
+volgende runs 08:15 / 10:00 / 11:30 / 13:30, WakeToRun en
+StartWhenAvailable ongewijzigd, niets extra gestart. (De oude zin "Claude
+kan geen taken registreren" klopt dus niet meer; wel altijd eerst Peters
+ja vragen.) Een `.bat` met `-ExecutionPolicy Bypass` als dubbelklik-
+alternatief werd door de beveiliging van de chat-omgeving geweigerd.
 
 ## Onderzoek 31 juli: de grens van wat prijs kan (BEWUST NIETS AAN GEDAAN)
 
