@@ -40,7 +40,16 @@ foreach ($t in $taken) {
             (New-ScheduledTaskTrigger -Weekly -DaysOfWeek Saturday,Sunday -At "09:45")
         )
     } else {
-        $trigger = New-ScheduledTaskTrigger -Daily -At $t.Tijd
+        $trigger = @(New-ScheduledTaskTrigger -Daily -At $t.Tijd)
+    }
+    # ZOMER/WINTERTIJD (26 okt 2026): New-ScheduledTaskTrigger slaat de
+    # starttijd op MET tijdzone ("2026-08-22T10:00:00+02:00"). Windows houdt
+    # zo'n taak dan op hetzelfde wereldtijd-moment vast, waardoor de
+    # dagelijkse taken na de wintertijd een uur te vroeg liepen (optimize
+    # 09:00, sync 12:30; optimize botste zo met BE's snelstart van 09:00).
+    # Zonder tijdzone volgt Windows de gewone klok. Dus: tijdzone eraf.
+    foreach ($tr in $trigger) {
+        $tr.StartBoundary = ([datetime]$tr.StartBoundary).ToString("yyyy-MM-dd'T'HH:mm:ss")
     }
     # -WakeToRun: haalt de pc uit de slaapstand voor deze taak
     # -StartWhenAvailable: draait alsnog als het tijdstip gemist werd (pc was uit)
@@ -54,7 +63,11 @@ foreach ($t in $taken) {
 
 Write-Host ""
 Write-Host "Klaar. Controle:"
-Get-ScheduledTask -TaskName "Bol NL*" | Select-Object TaskName, State | Format-Table -AutoSize
+Get-ScheduledTask -TaskName "Bol NL*" | ForEach-Object {
+    $n = $_.TaskName
+    $_.Triggers | ForEach-Object { "{0,-32} start {1}" -f $n, $_.StartBoundary }
+}
+Write-Host "(Goed = tijden ZONDER +01:00 of +02:00 erachter.)"
 
 Write-Host ""
 Write-Host "Klaar. Wijzigingen gelden vanaf de eerstvolgende geplande run (de taken draaien onzichtbaar via pythonw)."

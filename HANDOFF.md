@@ -1549,6 +1549,20 @@ maart 2027** (zomertijd) - alle 24 UTC-uren -1, controle: UTC+2 = label.
 Wie het vergeet: de runs lopen dan een uur achter op Channable; geen
 verkeerde prijzen, alleen trager.
 
+**Taakplanner op de pc (ontdekt 26 okt):** óók verschoven. De DAGELIJKSE
+taken (probe_start, probe_check, sync) liepen sinds 25 okt een uur te
+vroeg (09:00, 10:30, 12:30); de WEKELIJKSE snelstart-triggers bleven
+goed. Oorzaak: `New-ScheduledTaskTrigger -At` slaat de tijd op met
+tijdzone (getest: "10:00" wordt `...T09:00:00Z`), dus vast op wereldtijd.
+Gevolg o.a.: NL-optimize 09:00 tegelijk met BE-snelstart 09:00 (twee
+scrapes = rate-limiting). **Fix in `taken_aanmaken.ps1`** (26 okt): na het
+maken van de triggers de tijdzone eraf (`StartBoundary` als
+`yyyy-MM-ddTHH:mm:ss`), dan volgt Windows de gewone klok. Peter moet het
+script opnieuw draaien (rechtsklik > Uitvoeren met PowerShell); de controle
+onderaan toont dan tijden zonder `+01:00`/`Z`. Daarna hoeft de taakplanner
+bij zomer/wintertijd nooit meer aangepast. Instructie voor BE:
+`instructie-BE-taakplanner-wintertijd.md`.
+
 ## Onderzoek 31 juli: de grens van wat prijs kan (BEWUST NIETS AAN GEDAAN)
 
 Peter vroeg hoeveel artikelen een paar uur na de ochtendrun het koopblok
@@ -2079,6 +2093,8 @@ project gewerkt.
   10-euro-knik, en de bandcontrole over 87 bevroren artikelen gaf 0 boven
   de volle prijs en 0 onder de bodem. Geen reparatie nodig geweest.)
 
+- NL → BE: `...\bol-repricing\instructie-BE-taakplanner-wintertijd.md` (26 okt:
+  dagelijkse taakplanner-taken liepen een uur te vroeg; tijdzone eraf in het takenscript)
 - NL → BE: `...\bol-repricing\instructie-BE-wintertijd.md` (26 okt:
   cron-uren +1 voor de wintertijd, met de juiste rekenregel)
 - NL → BE: `...\bol-repricing\instructie-BE-bewaarde-feed.md` (21 okt:
