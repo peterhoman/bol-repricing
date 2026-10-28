@@ -1546,6 +1546,7 @@ wintertijd alle UTC-UREN +1, bij de zomertijd alle UTC-uren -1. (Hier en in
 de workflow stond eerder "een uur terug" voor de herfst: dat was verkeerd
 om.) **Gedaan op 26 okt 2026** (wintertijd). **Volgende keer: zondag 28
 maart 2027** (zomertijd) - alle 24 UTC-uren -1, controle: UTC+2 = label.
+Staat op Peters takenbord (commandocentrum) voor 28-03-2027, voor NL en BE.
 Wie het vergeet: de runs lopen dan een uur achter op Channable; geen
 verkeerde prijzen, alleen trager.
 
