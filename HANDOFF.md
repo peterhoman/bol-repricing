@@ -1574,6 +1574,16 @@ kan geen taken registreren" klopt dus niet meer; wel altijd eerst Peters
 ja vragen.) Een `.bat` met `-ExecutionPolicy Bypass` als dubbelklik-
 alternatief werd door de beveiliging van de chat-omgeving geweigerd.
 
+**Controle 28 okt:** taken op de pc draaiden 27 okt om 08:15 / 10:00 /
+11:30 / 13:30 - goed. Cloud: 27 okt 25 geplande runs, alle 25 geslaagd.
+Of de cloud-runs precies op de nieuwe slots vallen, is aan de tijden niet
+te bewijzen: GitHub laat ze al weken uren later starten (ook vóór de
+wijziging liepen er runs tot na middernacht). Het rooster op GitHub is wel
+nagerekend (24 van 24 goed). BE-instructies op 28 okt opnieuw gestuurd via
+het sessienummer (`local_0f54a618-...`), conform Peters afspraak van
+27 okt: berichten aan andere chats altijd via het nummer (dan wordt de
+chat wakker), niet via de naam.
+
 ## Onderzoek 31 juli: de grens van wat prijs kan (BEWUST NIETS AAN GEDAAN)
 
 Peter vroeg hoeveel artikelen een paar uur na de ochtendrun het koopblok
