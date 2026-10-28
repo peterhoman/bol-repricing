@@ -1583,6 +1583,12 @@ nagerekend (24 van 24 goed). BE-instructies op 28 okt opnieuw gestuurd via
 het sessienummer (`local_0f54a618-...`), conform Peters afspraak van
 27 okt: berichten aan andere chats altijd via het nummer (dan wordt de
 chat wakker), niet via de naam.
+**BE bevestigt (28 okt):** beide wintertijd-instructies al op 26 okt
+verwerkt. Cron 24/24 +1, oude "herfst -1"-toelichting ook daar verbeterd;
+takenscript zonder tijdzone, door Peter gestart via een eigen
+`taken_aanmaken.bat` (zelf uitvoeren was in de BE-chat geblokkeerd). BE-taken
+draaiden 27 okt weer om 09:00/10:45/12:15/14:15. NL en BE zitten elkaar dus
+niet meer in de weg. Afgevinkt.
 
 ## Onderzoek 31 juli: de grens van wat prijs kan (BEWUST NIETS AAN GEDAAN)
 
