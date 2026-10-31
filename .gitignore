@@ -20,3 +20,13 @@ output/
 
 # bodemprijzen - NIET openbaar maken (repo is publiek; concurrenten zouden onze laagste prijzen zien)
 bodemprijs_lijst_*.csv
+
+# Bewust NIET op GitHub (besluit Peter 12 sept 2026): verouderd statusbestand
+# van juni en de vijf oude scripts van de opzet met lokale database. Ze staan
+# alleen op de pc; verwijderen is voorgesteld (25 okt), wacht op Peter.
+STATUS.md
+src/bol_api.py
+src/db.py
+src/main.py
+src/phase2.py
+src/repricing.py
