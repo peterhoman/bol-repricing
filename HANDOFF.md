@@ -1051,6 +1051,10 @@ start `match_prices`/`probe_recovery`/`sync_buybox`, de cloud
 `github_action_reprice`; de vijf gebruiken alleen elkaar. De kopie
 `..\bol-repricing-kopie-12sept` staat sinds 26 okt in de Prullenbak (Peter akkoord; eerst alle 27 bestanden vergeleken). STATUS.md: op 12 sept besloot Peter hem
 niet vast te leggen (verouderd); niet vastgelegd, voorgelegd.
+**31 okt:** op verzoek "alles vastleggen" (via AI werkplek bouwplan) zijn
+deze zes (STATUS.md + vijf oude scripts) niet vastgelegd maar in
+`.gitignore` gezet, conform het besluit van 12 sept; ze staan alleen op de
+pc. Verwijderen blijft een open vraag aan Peter.
 
 **26 okt - belangrijkste vondst, bouw GESTOPT:** Peter gaf akkoord om de
 feedlink naar een secret te verplaatsen en de bewaarde feed te versleutelen
