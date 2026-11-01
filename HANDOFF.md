@@ -1053,8 +1053,12 @@ start `match_prices`/`probe_recovery`/`sync_buybox`, de cloud
 niet vast te leggen (verouderd); niet vastgelegd, voorgelegd.
 **31 okt:** op verzoek "alles vastleggen" (via AI werkplek bouwplan) zijn
 deze zes (STATUS.md + vijf oude scripts) niet vastgelegd maar in
-`.gitignore` gezet, conform het besluit van 12 sept; ze staan alleen op de
-pc. Verwijderen blijft een open vraag aan Peter.
+`.gitignore` gezet, conform het besluit van 12 sept.
+**1 nov: VERWIJDERD** (Peter: "ja verwijderen"), naar de Prullenbak, na nogmaals
+nagekeken dat geen enkel draaiend script ze gebruikt; live scripts daarna
+gecompileerd en geladen: OK. De `.gitignore`-regels weer weggehaald.
+`bol_repricing.db` (juni, alleen door die scripts gebruikt) staat nog op de
+pc; stond al buiten git via `*.db`.
 
 **26 okt - belangrijkste vondst, bouw GESTOPT:** Peter gaf akkoord om de
 feedlink naar een secret te verplaatsen en de bewaarde feed te versleutelen
