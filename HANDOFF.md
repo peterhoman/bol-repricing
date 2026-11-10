@@ -1082,6 +1082,20 @@ Ook BE heeft vermoedelijk dezelfde opzet.
 (zie "Zomer/wintertijd" onder "Over de cron"). Instructie voor BE:
 `instructie-BE-wintertijd.md`.
 
+## BOL OFFERS API v10 STOPT 1-2-2027: RAAKT DIT PROJECT NIET (uitgezocht 10 nov)
+
+Vraag van de centrale chat (bol mailde 9-11: nog deels v10 in gebruik).
+Uitkomst: dit project gebruikt de bol Retailer API helemaal niet, ook geen
+v10. Gezocht in alle scripts, workflow, takenscript en de hele
+git-geschiedenis op `vnd.retailer`, `api.bol.com`, `/retailer`, `/offers`:
+nul treffers. `.env` bevat geen bol-sleutels (alleen BOL_MONITOR_URL,
+CHANNABLE_FEED_URL, GITHUB_*). Het enige bol-verkeer is lezen van de
+openbare website (zoekpagina, productpagina, prijsoverzicht) voor de
+koopblok- en concurrentiechecks. Prijzen gaan naar bol via de Channable-
+feed: Channable praat met de Retailer API, niet wij. De v10-gebruiker moet
+dus elders zitten (bol-lightspeed-sync, of een Channable-koppeling - dat
+laatste is aan Channable). Niets te doen in bol-repricing.
+
 ## KLUSJE VOOR LATER: verkoopprijs i.p.v. inkoopprijs in de Channable-feed
 
 Besloten 26 okt (Peter, na de vondst hierboven): NU NIETS doorvoeren, maar
